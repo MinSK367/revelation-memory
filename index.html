@@ -82,17 +82,46 @@ const PARTICLES=['으로부터','에게서','까지는','에서는','으로는',
 const LIGHT_WORDS=new Set(['그','저','이','또','곧','및','더','다','내','네','자기','저희','우리','너희','것','수','때','중','앞','뒤','위','아래','안','밖']);
 function contentStem(word){let w=norm(word);for(const p of PARTICLES){if(w.endsWith(p)&&w.length>p.length+1){w=w.slice(0,-p.length);break}}return w}
 function tokenWeight(word){const stem=contentStem(word);if(!stem||LIGHT_WORDS.has(stem))return .15;let score=Math.min(4,Math.max(1,stem.length));if(/^(예수|그리스도|하나님|성령|어린양|천사|교회|보좌|계시|말씀|증거|생명|사망|심판|나라|권세|영광|구원|믿음|인내|회개|복음|성도|선지자)/.test(stem))score+=1.5;return score}
-function bestPhraseSpan(text,level=1){const words=text.split(/\s+/).filter(Boolean);const n=words.length;if(n<=2)return {start:0,end:n};const minLen=2;const maxLen=level===1?Math.min(5,Math.max(2,Math.round(n*.28))):Math.min(11,Math.max(4,Math.round(n*.5)));const targetLen=level===1?Math.min(4,Math.max(2,Math.round(n*.22))):Math.min(8,Math.max(4,Math.round(n*.42)));let best={start:0,end:Math.min(n,targetLen),score:-Infinity};for(let len=minLen;len<=maxLen;len++){for(let start=0;start+len<=n;start++){const slice=words.slice(start,start+len);const meaningful=slice.filter(w=>tokenWeight(w)>.5).length;if(meaningful<2)continue;let score=slice.reduce((a,w)=>a+tokenWeight(w),0);score-=Math.abs(len-targetLen)*1.1;const edgeBonus=(start>0&&start+len<n)?0.35:0;score+=edgeBonus;if(level===2)score+=meaningful*.25;if(score>best.score)best={start,end:start+len,score}}}return {start:best.start,end:best.end}}
-function level1Span(text){return bestPhraseSpan(text,1)}
-function level2Span(text){return bestPhraseSpan(text,2)}
+function chapterStemFreq(entries){const f={};entries.forEach(([,t])=>t.split(/\s+/).forEach(w=>{const stem=contentStem(w);if(stem&&tokenWeight(w)>.5)f[stem]=(f[stem]||0)+1}));return f}
+function phraseCandidates(text,level,entries){
+  const words=text.split(/\s+/).filter(Boolean),n=words.length,freq=chapterStemFreq(entries);
+  if(n<=2)return [{start:0,end:n,score:1}];
+  const minLen=2;
+  const maxLen=level===1?Math.min(5,Math.max(2,Math.round(n*.28))):Math.min(9,Math.max(3,Math.round(n*.38)));
+  const targetLen=level===1?Math.min(4,Math.max(2,Math.round(n*.22))):Math.min(6,Math.max(3,Math.round(n*.32)));
+  const out=[];
+  for(let len=minLen;len<=maxLen;len++)for(let start=0;start+len<=n;start++){
+    const slice=words.slice(start,start+len);
+    const stems=slice.map(contentStem).filter((st,i)=>st&&tokenWeight(slice[i])>.5);
+    if(stems.length<2)continue;
+    // 같은 장에서 자주 반복되는 어절은 쉬운 단서가 되므로 강하게 감점한다.
+    const repeated=stems.filter(st=>(freq[st]||0)>=3).length;
+    const rare=stems.filter(st=>(freq[st]||0)<=1).length;
+    if(repeated===stems.length)continue;
+    let score=slice.reduce((a,w)=>a+tokenWeight(w),0);
+    score+=rare*2.2-repeated*2.0;
+    score-=Math.abs(len-targetLen)*1.0;
+    if(start>0&&start+len<n)score+=.35;
+    out.push({start,end:start+len,score});
+  }
+  return out.sort((a,b)=>b.score-a.score);
+}
+function bestPhraseSpan(text,level,entries){return phraseCandidates(text,level,entries)[0]||{start:0,end:Math.min(2,text.split(/\s+/).length)}}
+function twoPhraseSpans(text,entries){
+  const cands=phraseCandidates(text,2,entries);let first=cands[0];
+  if(!first)return [{start:0,end:Math.min(2,text.split(/\s+/).length)}];
+  const second=cands.find(c=>c.end<=first.start||c.start>=first.end);
+  return [first,second].filter(Boolean).sort((a,b)=>a.start-b.start);
+}
+function level1Span(text,entries){return bestPhraseSpan(text,1,entries)}
 function renderChapters(){const g=$('#chapterGrid');g.innerHTML='';for(let i=1;i<=22;i++){const b=document.createElement('button');b.className='chbtn'+(i===chapter?' active':'');const best=Math.max(0,...state.history.filter(h=>h.chapter===i).map(h=>h.score));if(best>=90)b.classList.add('done');b.textContent=i;b.onclick=()=>{chapter=i;retryWrongOnly=false;renderAll()};g.appendChild(b)}}
 function renderStudy(){const entries=verseEntries();$('#currentChapterLabel').textContent=`요한계시록 ${chapter}장`;$('#verseCountLabel').textContent=`${entries.length}절`;
  if(!entries.length){$('#studyArea').innerHTML=`<div class="empty"><h3>${chapter}장 본문이 아직 없습니다.</h3><p>왼쪽의 <b>본문 관리</b>에서 개역한글 본문을 등록해 주세요.</p><button class="btn primary" onclick="showView('data')">본문 등록하기</button></div>`;return}
  if(level===1)renderL1(entries); else if(level===2)renderL2(entries); else renderL3(entries);
 }
 function targetEntries(entries){if(!retryWrongOnly)return entries;return entries.filter(([k])=>state.wrong[k])}
-function renderL1(entries){entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 조사 자체는 핵심성 판단에서 제외하고, 최소 2어절 이상의 핵심구절을 통째로 회상합니다. 정답은 원문 표현 그대로 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
-function renderL2(entries){entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 1단계와 같은 조사 제외 기준을 사용하되, 더 긴 핵심문장 구간을 회상해 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level2Span(t),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(180,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+function renderL1(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 조사 자체는 핵심성 판단에서 제외하고, 최소 2어절 이상의 핵심구절을 회상합니다. 같은 장에서 반복되어 외우기 쉬운 어절은 빈칸 후보에서 우선 제외합니다. 정답은 원문 그대로 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
+function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 1단계와 같은 반복어절 제외 기준을 적용하고, 각 절에서 서로 다른 핵심구간 <b>2곳</b>을 빈칸으로 냅니다. 각 빈칸은 원문과 정확히 일치해야 합니다.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
 function gradeBlanks(lv){const inputs=$$('.blank[data-answer]');let correct=0,wrongKeys=[];inputs.forEach(inp=>{const ans=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,ans);if(ok)correct++;inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');if(!ok){wrongKeys.push(inp.dataset.key);if(!inp.nextElementSibling?.classList?.contains('answer'))inp.insertAdjacentHTML('afterend',`<span class="answer">정답: ${ans}</span>`)}});const score=Math.round((correct/(inputs.length||1))*100);recordAttempt(lv,score,wrongKeys);showResult(score,wrongKeys.length,'',correct,inputs.length)}
 function renderL3(entries){const ref=entries.map(([k,t])=>`${k.split(':')[1]} ${t}`).join('\n');$('#studyArea').innerHTML=`<div class="card accuracy-note"><b>정확 채점</b> ${chapter}장을 <b>한 절씩 한 줄</b>로 입력하세요. 절 번호는 써도 되고 생략해도 됩니다. 조사·어미·단어·문장부호 하나라도 다르면 그 절은 오답입니다. 줄바꿈/연속 공백만 정리합니다.</div><textarea id="fullInput" placeholder="예:\n1 첫째 절 전체 본문\n2 둘째 절 전체 본문\n...\n\n절 번호를 생략할 경우에도 반드시 한 절씩 한 줄로 입력하세요."></textarea><div class="row" style="margin-top:12px"><button class="btn primary" id="gradeFull">전체장 정확 채점</button><button class="btn ghost" id="peekBtn">10초 인풋용 원문 보기</button></div><div id="peek" class="hidden card verse"></div><div id="resultBox"></div>`;$('#gradeFull').onclick=()=>gradeFull(entries);$('#peekBtn').onclick=()=>{const p=$('#peek');p.textContent=ref;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),10000)}}
 function splitUserByVerses(txt,entries){
