@@ -1,0 +1,86 @@
+name: Apply v5 memorization update
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v5.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-index:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch level 1 and level 2 difficulty logic
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_phrase = '''function bestPhraseSpan(text,level=1){const words=text.split(/\\s+/).filter(Boolean);const n=words.length;if(n<=2)return {start:0,end:n};const minLen=2;const maxLen=level===1?Math.min(5,Math.max(2,Math.round(n*.28))):Math.min(11,Math.max(4,Math.round(n*.5)));const targetLen=level===1?Math.min(4,Math.max(2,Math.round(n*.22))):Math.min(8,Math.max(4,Math.round(n*.42)));let best={start:0,end:Math.min(n,targetLen),score:-Infinity};for(let len=minLen;len<=maxLen;len++){for(let start=0;start+len<=n;start++){const slice=words.slice(start,start+len);const meaningful=slice.filter(w=>tokenWeight(w)>.5).length;if(meaningful<2)continue;let score=slice.reduce((a,w)=>a+tokenWeight(w),0);score-=Math.abs(len-targetLen)*1.1;const edgeBonus=(start>0&&start+len<n)?0.35:0;score+=edgeBonus;if(level===2)score+=meaningful*.25;if(score>best.score)best={start,end:start+len,score}}}return {start:best.start,end:best.end}}
+function level1Span(text){return bestPhraseSpan(text,1)}
+function level2Span(text){return bestPhraseSpan(text,2)}
+'''
+          new_phrase = '''function chapterStemFreq(entries){const f={};entries.forEach(([,t])=>t.split(/\\s+/).forEach(w=>{const stem=contentStem(w);if(stem&&tokenWeight(w)>.5)f[stem]=(f[stem]||0)+1}));return f}
+function phraseCandidates(text,level,entries){
+  const words=text.split(/\\s+/).filter(Boolean),n=words.length,freq=chapterStemFreq(entries);
+  if(n<=2)return [{start:0,end:n,score:1}];
+  const minLen=2;
+  const maxLen=level===1?Math.min(5,Math.max(2,Math.round(n*.28))):Math.min(9,Math.max(3,Math.round(n*.38)));
+  const targetLen=level===1?Math.min(4,Math.max(2,Math.round(n*.22))):Math.min(6,Math.max(3,Math.round(n*.32)));
+  const out=[];
+  for(let len=minLen;len<=maxLen;len++)for(let start=0;start+len<=n;start++){
+    const slice=words.slice(start,start+len);
+    const stems=slice.map(contentStem).filter((st,i)=>st&&tokenWeight(slice[i])>.5);
+    if(stems.length<2)continue;
+    const repeated=stems.filter(st=>(freq[st]||0)>=3).length;
+    const rare=stems.filter(st=>(freq[st]||0)<=1).length;
+    if(repeated===stems.length)continue;
+    let score=slice.reduce((a,w)=>a+tokenWeight(w),0);
+    score+=rare*2.2-repeated*2.0;
+    score-=Math.abs(len-targetLen)*1.0;
+    if(start>0&&start+len<n)score+=.35;
+    out.push({start,end:start+len,score});
+  }
+  return out.sort((a,b)=>b.score-a.score);
+}
+function bestPhraseSpan(text,level,entries){return phraseCandidates(text,level,entries)[0]||{start:0,end:Math.min(2,text.split(/\\s+/).length)}}
+function twoPhraseSpans(text,entries){
+  const cands=phraseCandidates(text,2,entries);let first=cands[0];
+  if(!first)return [{start:0,end:Math.min(2,text.split(/\\s+/).length)}];
+  const second=cands.find(c=>c.end<=first.start||c.start>=first.end);
+  return [first,second].filter(Boolean).sort((a,b)=>a.start-b.start);
+}
+function level1Span(text,entries){return bestPhraseSpan(text,1,entries)}
+'''
+
+          old_render = '''function renderL1(entries){entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 조사 자체는 핵심성 판단에서 제외하고, 최소 2어절 이상의 핵심구절을 통째로 회상합니다. 정답은 원문 표현 그대로 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\\s+/),sp=level1Span(t),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
+function renderL2(entries){entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 1단계와 같은 조사 제외 기준을 사용하되, 더 긴 핵심문장 구간을 회상해 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\\s+/),sp=level2Span(t),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(180,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+'''
+          new_render = '''function renderL1(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 조사 자체는 핵심성 판단에서 제외하고, 최소 2어절 이상의 핵심구절을 회상합니다. 같은 장에서 반복되어 외우기 쉬운 어절은 빈칸 후보에서 우선 제외합니다. 정답은 원문 그대로 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\\s+/),sp=level1Span(t,chapterEntries),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
+function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 1단계와 같은 반복어절 제외 기준을 적용하고, 각 절에서 서로 다른 핵심구간 <b>2곳</b>을 빈칸으로 냅니다. 각 빈칸은 원문과 정확히 일치해야 합니다.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+'''
+
+          if old_phrase not in s:
+              raise SystemExit('Old phrase-selection block not found; index.html was not changed.')
+          if old_render not in s:
+              raise SystemExit('Old level-render block not found; index.html was not changed.')
+
+          s = s.replace(old_phrase, new_phrase, 1)
+          s = s.replace(old_render, new_render, 1)
+          p.write_text(s, encoding='utf-8')
+          print('Patched index.html successfully')
+          PY
+      - name: Commit updated site
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Increase level 1 and 2 memorization difficulty"
+          git push
