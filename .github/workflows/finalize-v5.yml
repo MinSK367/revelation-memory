@@ -1,0 +1,49 @@
+name: Finalize v5 rules
+
+on:
+  push:
+    paths:
+      - '.github/workflows/finalize-v5.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tighten repetition rule and guarantee two blanks
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("const repeated=stems.filter(st=>(freq[st]||0)>=3).length;","const repeated=stems.filter(st=>(freq[st]||0)>=2).length;")
+          old="""function twoPhraseSpans(text,entries){
+  const cands=phraseCandidates(text,2,entries);let first=cands[0];
+  if(!first)return [{start:0,end:Math.min(2,text.split(/\\s+/).length)}];
+  const second=cands.find(c=>c.end<=first.start||c.start>=first.end);
+  return [first,second].filter(Boolean).sort((a,b)=>a.start-b.start);
+}"""
+          new="""function twoPhraseSpans(text,entries){
+  const words=text.split(/\\s+/),cands=phraseCandidates(text,2,entries);let first=cands[0]||{start:0,end:Math.min(2,words.length)};
+  let second=cands.find(c=>c.end<=first.start||c.start>=first.end);
+  if(!second&&words.length>=4){
+    const left={start:0,end:2},right={start:words.length-2,end:words.length};
+    if(first.start>=2)second=left;else if(first.end<=words.length-2)second=right;else{first=left;second=right}
+  }
+  if(!second)second={start:Math.max(0,words.length-2),end:words.length};
+  return [first,second].sort((a,b)=>a.start-b.start);
+}"""
+          if old not in s: raise SystemExit('twoPhraseSpans block not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Finalize v5 blank-selection rules"
+          git push
