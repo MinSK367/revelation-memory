@@ -1,0 +1,32 @@
+name: Finalize v6 grading UX
+
+on:
+  push:
+    paths:
+      - '.github/workflows/finalize-v6-1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Finalize grading text and empty-answer diff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('${exactMsg} · 유사도 보정 없음','${exactMsg} · 띄어쓰기·문장부호는 채점 제외')
+          s=s.replace("expected=w.lastExpected||orig,mine=w.lastMine||'',d=mine?diffMarked(expected,mine):null", "expected=w.lastExpected||orig,mine=w.lastMine??'',hasMine=Object.prototype.hasOwnProperty.call(w,'lastMine'),d=hasMine?diffMarked(expected,mine):null")
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit final v6 tweaks
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Finalize v6 grading UX"
+          git push
