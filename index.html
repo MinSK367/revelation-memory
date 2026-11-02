@@ -22,45 +22,48 @@ textarea{width:100%;min-height:330px;border:1px solid var(--line);border-radius:
 .verse-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;margin-top:12px}.verse-result{border-radius:10px;padding:9px 8px;text-align:center;font-weight:900;border:1px solid var(--line)}.verse-result.correct{background:#e8f6ed;color:var(--ok);border-color:#b9dfc7}.verse-result.wrong{background:#fff0ed;color:var(--bad);border-color:#efb9b0}.diff-char{color:var(--bad);font-weight:900;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}.diff-line{margin-top:7px;line-height:1.9}.diff-label{display:inline-block;min-width:52px;font-size:12px;font-weight:800;color:var(--muted)}
 @media(max-width:700px){.home-summary{grid-template-columns:repeat(2,1fr)}.home-bar-row{grid-template-columns:42px 1fr 56px}}
 @media(max-width:850px){.grid{grid-template-columns:1fr}.side{position:static}.stats{grid-template-columns:repeat(2,1fr)}.levels{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.chapter-grid{grid-template-columns:repeat(6,1fr)}}
+
+summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding:10px 0}button:disabled{opacity:.5;cursor:default}.wrong-tabs{gap:6px}.wrong-tabs .btn{flex:1;padding:10px 6px;white-space:nowrap}.star{color:#956211}.frequent{border:1px solid #ddc99d;background:#fff9ec;border-radius:12px;padding:0 12px}.answer-detail{margin:4px 0}.diff-line{overflow-wrap:anywhere}.main,.side{min-width:0}select{padding:10px;border:1px solid var(--line);border-radius:10px;background:white}.wrong-chapter{margin:20px 0}.chapter-picker{margin-top:12px}.btn{min-height:44px}input,textarea{font-size:16px}.level{font:inherit;text-align:left}.level:focus-visible,summary:focus-visible{outline:2px solid var(--accent)}
+@media(max-width:600px){.app{padding:12px}.hero{gap:10px;margin-bottom:12px}.brand{font-size:10px}.hero h1{font-size:25px}.hero p{font-size:13px}.grid{gap:12px}.side{padding:10px;display:flex;flex-wrap:wrap;gap:3px}.navbtn{width:auto;flex:1;white-space:nowrap;text-align:center;padding:10px 5px;font-size:12px;min-height:44px}.chapter-picker{width:100%;margin:0}.side>.section-title,.side>.progress,.side>#chapterProgressText{display:none}.main{padding:14px;min-height:420px;border-radius:16px}h2{font-size:21px;margin:4px 0 10px}h3{font-size:17px}.card{padding:12px;margin:12px 0;border-radius:12px}.levels{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}.level{padding:10px 6px;border-radius:10px}.level strong{font-size:12px}.level span{display:none}.verse{font-size:16px}.verse-input-wrap{grid-template-columns:30px minmax(0,1fr);gap:6px}.verse-input{padding:10px}.stat{padding:10px}.stat .muted{font-size:12px}.home-summary .stat b{font-size:23px}.wrong-item{padding:10px}.empty{padding:28px 10px}.muted{line-height:1.55}.wrong-tabs .btn{font-size:13px}.home-bar-row{gap:6px}.blank{max-width:100%;min-width:0}.heat{grid-template-columns:repeat(11,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="hero"><div><div class="brand">Revelation Memory Lab</div><h1>요한계시록 통암기 훈련실</h1><p>읽기보다 회상하기. 1장부터 22장까지 인풋 → 아웃풋 → 오답회독.</p></div><div class="row"><span class="badge" id="todayStreak">연속 학습 0일</span><span class="badge" id="totalAttempts">총 0회 제출</span></div></div>
+  <div class="hero"><div><div class="brand">Revelation Memory Lab</div><h1>요한계시록 통암기 훈련실</h1><p>읽고, 가리고, 기억해서 써 보세요.</p></div><div class="row"><span class="badge" id="todayStreak">연속 학습 0일</span><span class="badge" id="totalAttempts">총 0회 제출</span></div></div>
   <div class="grid">
     <aside class="panel side">
-      <button class="navbtn active" data-view="home">🏠 HOME</button>
+      <button class="navbtn active" data-view="home">🏠 홈</button>
       <button class="navbtn" data-view="study">✍️ 암기 훈련</button>
       <button class="navbtn" data-view="wrong">📕 오답 노트</button>
       <button class="navbtn" data-view="stats">📊 진도·수준</button>
       <button class="navbtn" data-view="data">⚙️ 본문 관리</button>
-      <div class="section-title">장 선택</div><div class="chapter-grid" id="chapterGrid"></div>
-      <div class="section-title">현재 장 숙련도</div><div class="progress"><div id="chapterProgress"></div></div><div class="tiny muted" id="chapterProgressText" style="margin-top:7px">본문 내장 완료 · 바로 학습 가능</div>
+      <details class="chapter-picker"><summary>장 선택</summary><div class="chapter-grid" id="chapterGrid"></div></details>
+      <div class="section-title">현재 장 진도</div><div class="progress"><div id="chapterProgress"></div></div><div class="tiny muted" id="chapterProgressText" style="margin-top:7px">본문 내장 완료 · 바로 학습 가능</div>
     </aside>
     <main class="panel main">
       <section id="homeView">
-        <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">HOME</h2><p class="muted" style="margin:6px 0 0">3단계에서 절 전체를 정확히 맞힌 경우만 통암기 성취도로 인정합니다.</p></div><span class="badge" id="homeOverallBadge">전체 0%</span></div>
+        <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">홈</h2><p class="muted" style="margin:6px 0 0">3단계에서 맞힌 구절만큼 올라가요.</p></div><span class="badge" id="homeOverallBadge">전체 0%</span></div>
         <div class="home-summary" style="margin-top:18px">
-          <div class="stat"><span class="muted">전체 통암기 진척도</span><b id="homeOverall">0%</b><span class="tiny muted" id="homeMasteredCount">0 / 404절</span></div>
-          <div class="stat"><span class="muted">연속 학습</span><b id="homeStreak">0일</b><span class="tiny muted">하루 1회 이상 제출 기준</span></div>
-          <div class="stat"><span class="muted">총 학습일</span><b id="homeStudyDays">0일</b><span class="tiny muted">실제 제출한 날짜 수</span></div>
+          <div class="stat"><span class="muted">전체 암기 진도</span><b id="homeOverall">0%</b><span class="tiny muted" id="homeMasteredCount">0 / 404절</span></div>
+          <div class="stat"><span class="muted">연속 학습</span><b id="homeStreak">0일</b><span class="tiny muted">하루 한 번 도전해요</span></div>
+          <div class="stat"><span class="muted">총 학습일</span><b id="homeStudyDays">0일</b><span class="tiny muted">제출한 날을 세어요</span></div>
           <div class="stat"><span class="muted">누적 제출</span><b id="homeAttempts">0회</b><span class="tiny muted">1·2·3단계 전체</span></div>
         </div>
-        <div class="card accuracy-note"><b>정확 채점 원칙</b><div class="muted" style="margin-top:6px">조사·어미·글자는 원문과 정확히 같아야 정답입니다. 띄어쓰기·줄바꿈·문장부호·폰트 차이는 채점에서 제외합니다.</div></div>
-        <div class="card"><h3 style="margin-top:0">장별 통암기 성취도</h3><p class="muted">각 절의 가치는 <b>100 ÷ 해당 장의 전체 절 수</b>입니다. 예: 20절인 장에서 정확히 암송한 1절 = 5%.</p><div id="homeChapterBars" class="home-bars"></div></div>
+        <div class="card accuracy-note"><b>채점은 이렇게 해요</b><div class="muted" style="margin-top:6px">글자가 같으면 정답이에요. 띄어쓰기와 문장부호는 달라도 괜찮아요.</div></div>
+        <div class="card"><h3 style="margin-top:0">장별 통암기 성취도</h3><p class="muted">한 절씩 완성해 보세요.</p><div id="homeChapterBars" class="home-bars"></div></div>
       </section>
       <section id="studyView" class="hidden">
         <div class="row"><span class="badge" id="currentChapterLabel">요한계시록 1장</span><span class="muted" id="verseCountLabel">0절</span></div>
         <div class="levels">
-          <div class="level active" data-level="1"><strong>1단계 · 핵심구절 빈칸</strong><span>조사를 제외해 선별한 2어절 이상의 핵심구절 회상</span></div>
-          <div class="level" data-level="2"><strong>2단계 · 핵심문장 빈칸</strong><span>같은 기준으로 더 긴 의미 덩어리 회상</span></div>
-          <div class="level" data-level="3"><strong>3단계 · 장 전체 쓰기</strong><span>해당 장을 통째로 출력</span></div>
+          <button type="button" class="level active" data-level="1"><strong>1단계 · 빈칸 1곳</strong><span>빠진 구절 쓰기</span></button>
+          <button type="button" class="level" data-level="2"><strong>2단계 · 빈칸 2곳</strong><span>두 구절 떠올리기</span></button>
+          <button type="button" class="level" data-level="3"><strong>3단계 · 전체 쓰기</strong><span>한 절씩 끝까지 쓰기</span></button>
         </div>
         <div id="studyArea"></div>
       </section>
-      <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">틀린 구절만 모아 다시 회상합니다. 같은 절을 여러 번 틀리면 누적 횟수가 표시됩니다.</p><div class="row" style="margin-bottom:12px"><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">선택 장 오답만 다시 풀기</button><button class="btn danger" id="clearWrongBtn">오답 기록 초기화</button></div><div id="wrongList"></div></section>
-      <section id="statsView" class="hidden"><h2>진도·수준 평가</h2><div class="stats"><div class="stat"><span class="muted">평균 점수</span><b id="avgScore">0</b></div><div class="stat"><span class="muted">100점 장</span><b id="perfectChapters">0</b></div><div class="stat"><span class="muted">오답 구절</span><b id="wrongCount">0</b></div><div class="stat"><span class="muted">누적 제출</span><b id="attemptCount">0</b></div></div><div class="card"><h3>장별 최고점</h3><div class="heat" id="heatmap"></div></div><div class="card"><h3>내 수준 기준</h3><p><b>90~100점 · 통암기 안정권</b> — 다음 장 진입 또는 3단계 반복</p><p><b>75~89점 · 회상 강화 구간</b> — 틀린 절만 2회 재출력</p><p><b>60~74점 · 부분 암기</b> — 1·2단계로 구절 구조 재학습</p><p><b>0~59점 · 인풋 보강 필요</b> — 본문 읽기 → 소리내기 → 바로 회상 순서 권장</p></div><div class="card"><h3>최근 기록</h3><div id="historyList"></div></div></section>
-      <section id="dataView" class="hidden"><h2>본문·학습 데이터 관리</h2><div class="help"><b>요한계시록 개역한글 1~22장 본문이 이미 내장되어 있습니다.</b><br>사이트를 열면 바로 암기 훈련을 시작할 수 있습니다. 본문을 다시 복사·붙여넣을 필요가 없습니다. 아래 입력창은 나중에 본문을 교체하거나 수정할 때만 사용하면 됩니다.</div><div class="card importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label><button class="btn danger" id="resetBtn">전체 데이터 초기화</button></div></div><div class="card"><h3>문제 생성 규칙</h3><p>1단계는 은·는·이·가·을·를·의·에·로 등 조사를 핵심성 계산에서 제외하고, 최소 2어절 이상의 연속된 핵심구절을 빈칸 처리합니다. 2단계는 같은 기준으로 더 긴 핵심문장 구간을 선정합니다. 정답에는 조사까지 포함된 원문을 그대로 사용합니다. 3단계는 전체 장을 한 절씩 한 줄로 입력하고 절 단위로 정확 일치 여부를 채점합니다. 조사·어미·단어·문장부호가 하나라도 다르면 해당 절은 오답이며, 줄바꿈과 연속 공백만 정리합니다.</p><p class="tiny muted">예: “예수 그리스도의 계시”, “반드시 속히 될 일”처럼 단어 하나가 아니라 의미가 이어지는 구절 단위로 출제합니다.</p></div></section>
+      <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">다시 풀어 맞히면 목록에서 사라져요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><label for="wrongChapterFilter">장</label><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
+      <section id="statsView" class="hidden"><h2>학습 기록</h2><div class="stats"><div class="stat"><span class="muted">평균 점수</span><b id="avgScore">0</b></div><div class="stat"><span class="muted">100점 장</span><b id="perfectChapters">0</b></div><div class="stat"><span class="muted">오답 구절</span><b id="wrongCount">0</b></div><div class="stat"><span class="muted">누적 제출</span><b id="attemptCount">0</b></div></div><div class="card"><h3>장별 최고점</h3><div class="heat" id="heatmap"></div></div><div class="card"><h3>다음 연습</h3><p><b>90~100점 · 잘 기억하고 있어요</b> — 다음 장에 도전해요</p><p><b>75~89점 · 조금 더 연습해요</b> — 틀린 절을 다시 써 봐요</p><p><b>60~74점 · 빈칸부터 연습해요</b> — 1·2단계로 연습해요</p><p><b>0~59점 · 본문부터 읽어 봐요</b> — 읽고 가린 뒤 써 봐요</p></div><div class="card"><h3>최근 기록</h3><div id="historyList"></div></div></section>
+      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 목록에서 사라지고, 틀린 횟수는 남아요.</p></details></section>
     </main>
   </div>
 </div>
@@ -71,7 +74,18 @@ const stored=JSON.parse(localStorage.getItem(KEY)||'null');
 const state=stored||{verses:{...EMBEDDED_VERSES},history:[],wrong:{},mastery:{},lastStudy:null,streak:0};
 if(!Object.keys(state.verses||{}).length) state.verses={...EMBEDDED_VERSES};
 if(!state.mastery) state.mastery={};
-let chapter=1, level=1, retryWrongOnly=false;
+// Schema 3 keeps resolved counters; only a graded correct answer resolves a record.
+function migrateWrong(data){
+ if(data.wrongSchema===3)return;
+ const old=data.wrong||{};data.wrong={};
+ Object.entries(old).forEach(([k,w])=>{data.wrong['0:'+k]={...w,key:k,level:0,active:true};});
+ data.wrongSchema=3;
+}
+migrateWrong(state);
+let chapter=1, level=1, retryWrongOnly=false, retryKey=null, wrongLevel=1;
+const frequentOpen={};
+function activeWrong(lv=null){return Object.values(state.wrong).filter(w=>w.active!==false&&(lv===null||w.level===lv));}
+function hasWrong(k,lv){return state.wrong[lv+':'+k]?.active!==false&&!!state.wrong[lv+':'+k];}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function save(){localStorage.setItem(KEY,JSON.stringify(state));updateHeader();}
 function norm(s){return (s||'').replace(/[\s\n\r\t.,!?;:'"“”‘’·…()\[\]{}<>〈〉「」『』—_-]/g,'').toLowerCase();}
@@ -126,44 +140,77 @@ function twoPhraseSpans(text,entries){
   return [first,second].filter(Boolean).sort((a,b)=>a.start-b.start);
 }
 function level1Span(text,entries){return bestPhraseSpan(text,1,entries)}
-function renderChapters(){const g=$('#chapterGrid');g.innerHTML='';for(let i=1;i<=22;i++){const b=document.createElement('button');b.className='chbtn'+(i===chapter?' active':'');const best=Math.max(0,...state.history.filter(h=>h.chapter===i).map(h=>h.score));if(best>=90)b.classList.add('done');b.textContent=i;b.onclick=()=>{chapter=i;retryWrongOnly=false;renderAll()};g.appendChild(b)}}
-function renderStudy(){const entries=verseEntries();$('#currentChapterLabel').textContent=`요한계시록 ${chapter}장`;$('#verseCountLabel').textContent=`${entries.length}절`;
+function renderChapters(){const g=$('#chapterGrid');g.innerHTML='';for(let i=1;i<=22;i++){const b=document.createElement('button');b.className='chbtn'+(i===chapter?' active':'');const best=Math.max(0,...state.history.filter(h=>h.chapter===i).map(h=>h.score));if(best>=90)b.classList.add('done');b.textContent=i;b.onclick=()=>{chapter=i;retryWrongOnly=false;retryKey=null;renderAll()};g.appendChild(b)}}
+function renderStudy(){$$('.level').forEach(el=>el.classList.toggle('active',+el.dataset.level===level));const entries=verseEntries();$('#currentChapterLabel').textContent=`요한계시록 ${chapter}장`;$('#verseCountLabel').textContent=`${entries.length}절`;
  if(!entries.length){$('#studyArea').innerHTML=`<div class="empty"><h3>${chapter}장 본문이 아직 없습니다.</h3><p>왼쪽의 <b>본문 관리</b>에서 개역한글 본문을 등록해 주세요.</p><button class="btn primary" onclick="showView('data')">본문 등록하기</button></div>`;return}
+ if(retryWrongOnly&&!targetEntries(entries).length){$('#studyArea').innerHTML='<div class="empty">이 단계의 오답을 모두 맞혔어요.</div><button class="btn secondary" onclick="showView(\'wrong\')">오답 노트로</button>';return;}
  if(level===1)renderL1(entries); else if(level===2)renderL2(entries); else renderL3(entries);
 }
-function targetEntries(entries){if(!retryWrongOnly)return entries;return entries.filter(([k])=>state.wrong[k])}
-function renderL1(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 조사 자체는 핵심성 판단에서 제외하고, 최소 2어절 이상의 핵심구절을 회상합니다. 같은 장에서 반복되어 외우기 쉬운 어절은 빈칸 후보에서 우선 제외합니다. 정답은 원문 그대로 입력하세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
-function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card"><b>방법</b> 1단계와 같은 반복어절 제외 기준을 적용하고, 각 절에서 서로 다른 핵심구간 <b>2곳</b>을 빈칸으로 냅니다. 각 빈칸은 원문과 정확히 일치해야 합니다.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
-function gradeBlanks(lv){const inputs=$$('.blank[data-answer]');let correct=0,wrongKeys=[],wrongDetails={};inputs.forEach(inp=>{const ans=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,ans);if(ok)correct++;inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');if(!ok){wrongKeys.push(inp.dataset.key);wrongDetails[inp.dataset.key]={mine:inp.value,expected:ans,mode:'blank'};if(!inp.nextElementSibling?.classList?.contains('answer'))inp.insertAdjacentHTML('afterend',`<span class="answer">정답: ${ans}</span>`)}});wrongKeys=[...new Set(wrongKeys)];const score=Math.round((correct/(inputs.length||1))*100);recordAttempt(lv,score,wrongKeys,wrongDetails);showResult(score,wrongKeys.length,'',correct,inputs.length)}
+function targetEntries(entries){if(!retryWrongOnly)return entries;return entries.filter(([k])=>retryKey?k===retryKey:(hasWrong(k,level)||(level===3&&wrongLevel===0&&hasWrong(k,0))))}
+function renderL1(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">빈칸에 들어갈 구절을 기억해서 써 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
+function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">한 절의 빈칸 두 곳을 모두 맞혀 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+function gradeBlanks(lv){
+ const inputs=$$('.blank[data-answer]');if(!inputs.length||$('#quizForm button[type="submit"]').disabled)return;
+ const groups={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');if(!ok)inp.insertAdjacentHTML('afterend',`<span class="answer">정답: ${esc(expected)}</span>`);inp.readOnly=true;});
+ const keys=Object.keys(groups),wrongKeys=keys.filter(k=>groups[k].some(x=>!x.ok)),correctKeys=keys.filter(k=>!wrongKeys.includes(k)),details={};
+ wrongKeys.forEach(k=>details[k]={parts:groups[k],mine:groups[k].map(x=>x.mine).join(' / '),expected:groups[k].map(x=>x.expected).join(' / '),mode:'blank'});
+ $('#quizForm button[type="submit"]').disabled=true;
+ const score=Math.round(correctKeys.length/keys.length*100);recordAttempt(lv,score,wrongKeys,details,correctKeys);showResult(score,wrongKeys.length,'',correctKeys.length,keys.length);
+}
 function renderL3(entries){
+  entries=targetEntries(entries);
   const ref=entries.map(([k,t])=>`${k.split(':')[1]} ${t}`).join('\n');
-  let inputs=entries.map(([k])=>{const v=k.split(':')[1];return `<div class="verse-input-wrap"><div class="verse-input-label">${v}절</div><textarea class="verse-input" data-key="${k}" rows="2" placeholder="${v}절을 암송해서 입력하세요" autocomplete="off" spellcheck="false"></textarea></div>`}).join('');
-  $('#studyArea').innerHTML=`<div class="card accuracy-note"><b>3단계 · 절별 통암기</b><div class="muted" style="margin-top:6px">${chapter}장의 ${entries.length}개 절이 각각 입력칸으로 나뉘어 있습니다. 각 칸에 해당 절만 입력하세요. <b>띄어쓰기·줄바꿈·문장부호는 무시</b>하고, 조사·어미·글자가 다르면 오답입니다.</div></div><div id="verseInputs">${inputs}</div><div class="row" style="margin-top:14px"><button class="btn primary" id="gradeFull">전체 ${entries.length}절 채점하기</button><button class="btn ghost" id="peekBtn">10초 인풋용 원문 보기</button></div><div id="peek" class="hidden card verse"></div><div id="resultBox"></div>`;
+  let inputs=entries.map(([k])=>{const v=k.split(':')[1];return `<div class="verse-input-wrap"><div class="verse-input-label">${v}절</div><textarea class="verse-input" aria-label="${v}절 전체 쓰기" data-key="${k}" rows="2" placeholder="${v}절을 암송해서 입력하세요" autocomplete="off" spellcheck="false"></textarea></div>`}).join('');
+  $('#studyArea').innerHTML=`<div class="card accuracy-note"><b>3단계 · 절별 통암기</b><div class="muted" style="margin-top:6px">본문을 가리고 한 절씩 써 보세요.</div></div><div id="verseInputs">${inputs}</div><div class="row" style="margin-top:14px"><button class="btn primary" id="gradeFull">전체 ${entries.length}절 채점하기</button><button class="btn ghost" id="peekBtn">본문 10초 보기</button></div><div id="peek" class="hidden card verse"></div><div id="resultBox"></div>`;
   $('#gradeFull').onclick=()=>gradeFull(entries);
   $('#peekBtn').onclick=()=>{const p=$('#peek');p.textContent=ref;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),10000)};
 }
 function gradeFull(entries){
+  if(!entries.length||$('#gradeFull').disabled)return;
+  $('#gradeFull').disabled=true;
   const wrongKeys=[],correctKeys=[],wrongDetails={};
   entries.forEach(([k,t])=>{
     const inp=$(`.verse-input[data-key="${k}"]`),mine=inp?inp.value:'';
     const ok=isExact(mine,t);
     inp?.classList.remove('correct','wrong');inp?.classList.add(ok?'correct':'wrong');
-    if(ok){correctKeys.push(k);state.mastery[k]=true;delete state.wrong[k];}
+    if(inp)inp.readOnly=true;
+    if(ok){correctKeys.push(k);state.mastery[k]=true;}
     else{wrongKeys.push(k);wrongDetails[k]={mine,expected:t,mode:'verse'};}
   });
   const score=Math.round((correctKeys.length/(entries.length||1))*100);
-  recordAttempt(3,score,wrongKeys,wrongDetails);
+  recordAttempt(3,score,wrongKeys,wrongDetails,correctKeys);
   const cells=entries.map(([k])=>{const v=k.split(':')[1],ok=correctKeys.includes(k);return `<div class="verse-result ${ok?'correct':'wrong'}">${v}절<br><span class="tiny">${ok?'정답':'오답'}</span></div>`}).join('');
   const detail=`<div class="card"><b>절 단위 채점</b><div style="margin-top:8px"><span class="exact-ok">정답 ${correctKeys.length}절</span> · <span class="exact-bad">오답 ${wrongKeys.length}절</span></div><div class="verse-result-grid">${cells}</div></div>`;
   save();showResult(score,wrongKeys.length,detail,correctKeys.length,entries.length);
 }
-function levelLabel(score){return score>=90?'통암기 안정권':score>=75?'회상 강화 구간':score>=60?'부분 암기':'인풋 보강 필요'}
-function showResult(score,wrongN,extra='',correctN=null,totalN=null){const exactMsg=correctN!==null?`정확 일치 ${correctN}/${totalN} · 오답 ${wrongN}개`:`오답 ${wrongN}개`;$('#resultBox').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><div><div class="score">${score}<small>/100</small></div><b>${levelLabel(score)}</b><div class="muted">${exactMsg} · 띄어쓰기·문장부호는 채점 제외</div></div><button class="btn secondary" onclick="showView('wrong')">오답 노트 보기</button></div></div>${extra}`;renderAll(false)}
-function recordAttempt(lv,score,wrongKeys,wrongDetails={}){const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString()});state.history=state.history.slice(0,300);const entries=Object.fromEntries(verseEntries());wrongKeys.forEach(k=>{state.wrong[k]=state.wrong[k]||{count:0,last:'',chapter:+k.split(':')[0],verse:+k.split(':')[1]};const w=state.wrong[k],d=wrongDetails[k]||{};w.count++;w.last=now.toISOString();w.text=entries[k]||state.verses[k];if('mine' in d)w.lastMine=d.mine;if('expected' in d)w.lastExpected=d.expected;if(d.mode)w.mode=d.mode});updateStreak(now);save()}
+function levelLabel(score){return score>=90?'잘 기억하고 있어요':score>=75?'조금 더 연습해요':score>=60?'빈칸부터 연습해요':'본문부터 읽어 봐요'}
+function showResult(score,wrongN,extra='',correctN=null,totalN=null){const exactMsg=correctN!==null?`정답 ${correctN}/${totalN}절 · 오답 ${wrongN}개`:`오답 ${wrongN}개`;$('#resultBox').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><div><div class="score">${score}<small>/100</small></div><b>${levelLabel(score)}</b><div class="muted">${exactMsg} · 띄어쓰기·문장부호는 채점 제외</div></div><div class="row"><button class="btn secondary" onclick="showView('wrong')">오답 보기</button><button class="btn ghost" onclick="renderStudy()">다시 풀기</button></div></div></div>${extra}`;renderAll(false)}
+function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[]){
+ const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString()});state.history=state.history.slice(0,300);
+ correctKeys.forEach(k=>{const w=state.wrong[lv+':'+k];if(w)w.active=false;if(lv===3&&state.wrong['0:'+k])state.wrong['0:'+k].active=false;});
+ [...new Set(wrongKeys)].forEach(k=>{const id=lv+':'+k,w=state.wrong[id]??={key:k,level:lv,count:0,chapter:+k.split(':')[0],verse:+k.split(':')[1]};const d=wrongDetails[k]||{};w.active=true;w.count++;w.last=now.toISOString();w.text=state.verses[k];w.lastMine=d.mine??'';w.lastExpected=d.expected??w.text;w.parts=d.parts||null;w.mode=d.mode;});updateStreak(now);save();
+}
 function updateStreak(now){const d=now.toISOString().slice(0,10);if(!state.lastStudy){state.streak=1}else{const prev=new Date(state.lastStudy);const diff=Math.round((new Date(d)-new Date(prev.toISOString().slice(0,10)))/86400000);if(diff===1)state.streak++;else if(diff>1)state.streak=1}state.lastStudy=now.toISOString()}
-function renderWrong(){const sel=$('#wrongChapterFilter');sel.innerHTML='<option value="all">전체 장</option>'+Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');if(!sel.dataset.bound){sel.onchange=renderWrongList;sel.dataset.bound=1}renderWrongList()}
-function renderWrongList(){const val=$('#wrongChapterFilter').value||'all';const arr=Object.entries(state.wrong).filter(([k,w])=>val==='all'||w.chapter===+val).sort((a,b)=>b[1].count-a[1].count);$('#wrongList').innerHTML=arr.length?arr.map(([k,w])=>{const orig=state.verses[k]||w.text||'',expected=w.lastExpected||orig,mine=w.lastMine??'',hasMine=Object.prototype.hasOwnProperty.call(w,'lastMine'),d=hasMine?diffMarked(expected,mine):null;return `<div class="wrong-item"><div class="row" style="justify-content:space-between"><span class="ref">계 ${k}</span><span class="badge">${w.count}회 오답</span></div>${d?`<div class="diff-line"><span class="diff-label">정답</span>${d.expected}</div><div class="diff-line"><span class="diff-label">내 입력</span>${d.mine||'<span class=\"diff-char\">(미입력)</span>'}</div><div class="tiny muted" style="margin-top:6px">빨간 글자가 서로 일치하지 않는 부분입니다. 띄어쓰기와 문장부호는 비교에서 제외됩니다.</div>`:`<div class="orig">${esc(orig)}</div>`}<div class="row" style="margin-top:9px"><button class="btn ghost tiny" onclick="retryOne('${k}')">이 절 다시 암기</button><button class="btn ghost tiny" onclick="masterWrong('${k}')">암기완료 처리</button></div></div>`}).join(''):'<div class="empty">현재 저장된 오답이 없습니다.</div>'}
-window.retryOne=function(k){chapter=+k.split(':')[0];level=1;retryWrongOnly=true;showView('study');renderAll()};window.masterWrong=function(k){delete state.wrong[k];save();renderWrongList();renderAll(false)}
+function renderWrong(){
+ const sel=$('#wrongChapterFilter'),val=sel.value||'all';sel.innerHTML='<option value="all">전체 장</option>'+Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');sel.value=val;sel.onchange=renderWrongList;
+ $('#wrongTabs').innerHTML=[1,2,3,0].map(lv=>`<button class="btn ${wrongLevel===lv?'primary':'ghost'}" aria-pressed="${wrongLevel===lv}" onclick="wrongLevel=${lv};renderWrong()">${lv?lv+'단계':'이전 기록'} <span class="tiny">${activeWrong(lv).length}</span></button>`).join('');renderWrongList();
+}
+function wrongCard(w){
+ const parts=w.parts||[{expected:w.lastExpected||state.verses[w.key]||w.text,mine:w.lastMine??''}];
+ const comparison=parts.map((p,i)=>{const d=diffMarked(p.expected,p.mine);return `${parts.length>1?`<b class="tiny">빈칸 ${i+1}</b>`:''}<div class="diff-line"><span class="diff-label">정답</span>${d.expected}</div><div class="diff-line"><span class="diff-label">내 답</span>${d.mine||'<span class="diff-char">입력 없음</span>'}</div>`;}).join('');
+ return `<article class="wrong-item"><div class="row"><b>${w.count>=3?'<span class="star" aria-label="자주 틀리는 구절">★</span> ':''}${w.verse}절</b><span class="badge">${w.count}회 틀림</span></div><details class="answer-detail"><summary>정답 · 내 답 비교</summary>${comparison}</details><button class="btn ghost tiny" onclick="retryOne('${w.key}',${w.level})">이 절 다시 풀기</button></article>`;
+}
+function renderWrongList(){
+ const val=$('#wrongChapterFilter').value||'all',arr=activeWrong(wrongLevel).filter(w=>val==='all'||w.chapter===+val);
+ $('#retryWrongBtn').disabled=!arr.length;
+ const chapters=[...new Set(arr.map(w=>w.chapter))].sort((a,b)=>a-b);
+ $('#wrongList').innerHTML=(wrongLevel===0?'<p class="tiny muted">단계가 남아 있지 않은 예전 오답이에요. 3단계에서 맞히면 사라져요.</p>':'')+(chapters.length?chapters.map(ch=>{
+ const rows=arr.filter(w=>w.chapter===ch).sort((a,b)=>a.verse-b.verse),stars=rows.filter(w=>w.count>=3),rest=rows.filter(w=>w.count<3),id=wrongLevel+':'+ch;
+ return `<div class="wrong-chapter"><h3>${ch}장 <span class="muted tiny">${rows.length}절</span></h3>${stars.length?`<details class="frequent" data-group="${id}" ${frequentOpen[id]?'open':''}><summary>★ 자주 틀리는 구절 <span class="tiny">${stars.length}절</span></summary>${stars.map(wrongCard).join('')}</details>`:''}${rest.map(wrongCard).join('')}</div>`;
+ }).join(''):'<div class="empty">남은 오답이 없어요.</div>');
+ $$('.frequent').forEach(el=>el.ontoggle=()=>frequentOpen[el.dataset.group]=el.open);
+}
+window.retryOne=function(k,lv){chapter=+k.split(':')[0];wrongLevel=lv;level=lv||3;retryWrongOnly=true;retryKey=k;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});};
 function chapterMastery(ch){
   const entries=verseEntries(ch),total=entries.length,done=entries.filter(([k])=>state.mastery[k]).length;
   return {total,done,pct:total?done/total*100:0};
@@ -179,10 +226,10 @@ function renderHome(){
   $('#homeAttempts').textContent=`${state.history.length}회`;
   $('#homeChapterBars').innerHTML=Array.from({length:22},(_,i)=>{
     const ch=i+1,m=chapterMastery(ch),perVerse=m.total?(100/m.total):0;
-    return `<div class="home-bar-row"><div class="home-bar-label">${ch}장</div><div><div class="home-bar-track"><div class="home-bar-fill" style="width:${m.pct}%"></div></div><div class="tiny muted" style="margin-top:4px">${m.done}/${m.total}절 · 1절당 ${perVerse.toFixed(2)}%</div></div><div class="home-bar-pct">${m.pct.toFixed(1)}%</div></div>`;
+    return `<div class="home-bar-row"><div class="home-bar-label">${ch}장</div><div><div class="home-bar-track"><div class="home-bar-fill" style="width:${m.pct}%"></div></div><div class="tiny muted" style="margin-top:4px">${m.done}/${m.total}절 · ${m.pct.toFixed(1)}%</div></div><div class="home-bar-pct">${m.pct.toFixed(1)}%</div></div>`;
   }).join('');
 }
-function renderStats(){const hist=state.history,avg=hist.length?Math.round(hist.reduce((a,b)=>a+b.score,0)/hist.length):0;$('#avgScore').textContent=avg;$('#wrongCount').textContent=Object.keys(state.wrong).length;$('#attemptCount').textContent=hist.length;let perfect=0;for(let ch=1;ch<=22;ch++){if(Math.max(0,...hist.filter(h=>h.chapter===ch).map(h=>h.score))===100)perfect++}$('#perfectChapters').textContent=perfect;const heat=$('#heatmap');heat.innerHTML='';for(let ch=1;ch<=22;ch++){const best=Math.max(0,...hist.filter(h=>h.chapter===ch).map(h=>h.score));const d=document.createElement('div');d.className=best>=90?'h3':best>=75?'h2':best>=60?'h1':'';d.title=`${ch}장 최고 ${best}점`;d.textContent=ch;heat.appendChild(d)}$('#historyList').innerHTML=hist.slice(0,15).map(h=>`<div class="row" style="justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span>${h.chapter}장 · ${h.level}단계</span><b>${h.score}점</b><span class="tiny muted">${new Date(h.date).toLocaleString('ko-KR')}</span></div>`).join('')||'<div class="muted">아직 기록이 없습니다.</div>'}
+function renderStats(){const hist=state.history,avg=hist.length?Math.round(hist.reduce((a,b)=>a+b.score,0)/hist.length):0;$('#avgScore').textContent=avg;$('#wrongCount').textContent=new Set(activeWrong().map(w=>w.key)).size;$('#attemptCount').textContent=hist.length;let perfect=0;for(let ch=1;ch<=22;ch++){if(Math.max(0,...hist.filter(h=>h.chapter===ch).map(h=>h.score))===100)perfect++}$('#perfectChapters').textContent=perfect;const heat=$('#heatmap');heat.innerHTML='';for(let ch=1;ch<=22;ch++){const best=Math.max(0,...hist.filter(h=>h.chapter===ch).map(h=>h.score));const d=document.createElement('div');d.className=best>=90?'h3':best>=75?'h2':best>=60?'h1':'';d.title=`${ch}장 최고 ${best}점`;d.textContent=ch;heat.appendChild(d)}$('#historyList').innerHTML=hist.slice(0,15).map(h=>`<div class="row" style="justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span>${h.chapter}장 · ${h.level}단계</span><b>${h.score}점</b><span class="tiny muted">${new Date(h.date).toLocaleString('ko-KR')}</span></div>`).join('')||'<div class="muted">아직 기록이 없습니다.</div>'}
 function updateProgress(){const m=chapterMastery(chapter);$('#chapterProgress').style.width=m.pct+'%';$('#chapterProgressText').textContent=`통암기 ${m.done}/${m.total}절 · ${m.pct.toFixed(1)}%`}
 function updateHeader(){$('#todayStreak').textContent=`연속 학습 ${state.streak||0}일`;$('#totalAttempts').textContent=`총 ${state.history.length}회 제출`}
 function showView(name){$$('main section').forEach(s=>s.classList.add('hidden'));$('#'+name+'View').classList.remove('hidden');$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderHome();if(name==='wrong')renderWrong();if(name==='stats')renderStats()}
@@ -190,10 +237,8 @@ window.showView=showView;
 $$('.navbtn').forEach(b=>b.onclick=()=>showView(b.dataset.view));$$('.level').forEach(el=>el.onclick=()=>{level=+el.dataset.level;retryWrongOnly=false;$$('.level').forEach(x=>x.classList.toggle('active',x===el));renderStudy()});
 $('#importBtn').onclick=()=>{const parsed=parseText($('#importText').value);const n=Object.keys(parsed).length;if(!n){alert('인식할 수 있는 구절이 없습니다. 예: 1:1 본문');return}state.verses={...state.verses,...parsed};save();alert(`${n}개 구절을 저장했습니다.`);renderAll();showView('study')};
 $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='revelation-memory-data.json';a.click();URL.revokeObjectURL(a.href)};
-$('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);Object.assign(state,o);save();renderAll();alert('학습 데이터를 불러왔습니다.')}catch{alert('올바른 JSON 파일이 아닙니다.')}};r.readAsText(f)};
-$('#resetBtn').onclick=()=>{if(confirm('점수와 오답 기록을 초기화할까요? 내장된 성경 본문은 유지됩니다.')){localStorage.removeItem(KEY);location.reload()}};
-$('#clearWrongBtn').onclick=()=>{if(confirm('오답 기록만 초기화할까요?')){state.wrong={};save();renderWrongList();renderAll(false)}};
-$('#retryWrongBtn').onclick=()=>{const v=$('#wrongChapterFilter').value;if(v==='all'){const first=Object.keys(state.wrong)[0];if(!first){alert('오답이 없습니다.');return}chapter=+first.split(':')[0]}else chapter=+v;level=1;retryWrongOnly=true;showView('study');renderAll()};
+$('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);migrateWrong(o);const retained=state.wrong;Object.assign(state,o);state.wrong={...o.wrong};Object.entries(retained).forEach(([id,w])=>{const imported=state.wrong[id];state.wrong[id]={...(imported||{}),...w,count:Math.max(w.count||0,imported?.count||0),active:w.active!==false||imported?.active===true};});save();renderAll();alert('학습 데이터를 불러왔습니다.')}catch{alert('올바른 JSON 파일이 아닙니다.')}};r.readAsText(f)};
+$('#retryWrongBtn').onclick=()=>{const v=$('#wrongChapterFilter').value,rows=activeWrong(wrongLevel).filter(w=>v==='all'||w.chapter===+v).sort((a,b)=>a.chapter-b.chapter);if(!rows.length)return;chapter=rows[0].chapter;level=wrongLevel||3;retryWrongOnly=true;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});};
 function renderAll(study=true){renderChapters();updateProgress();updateHeader();renderHome();if(study)renderStudy();renderStats()}
 renderAll();
 </script>
