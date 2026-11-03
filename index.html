@@ -188,7 +188,7 @@ function gradeFull(entries){
 function levelLabel(score){return score>=90?'잘 기억하고 있어요':score>=75?'조금 더 연습해요':score>=60?'빈칸부터 연습해요':'본문부터 읽어 봐요'}
 function showResult(score,wrongN,extra='',correctN=null,totalN=null){const exactMsg=correctN!==null?`정답 ${correctN}/${totalN}절 · 오답 ${wrongN}개`:`오답 ${wrongN}개`;$('#resultBox').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><div><div class="score">${score}<small>/100</small></div><b>${levelLabel(score)}</b><div class="muted">${exactMsg} · 띄어쓰기·문장부호는 채점 제외</div></div><div class="row"><button class="btn secondary" onclick="showView('wrong')">오답 보기</button><button class="btn ghost" onclick="renderStudy()">다시 풀기</button></div></div></div>${extra}`;renderAll(false)}
 function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[],source=null){
- const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString(),scope:source||(retryWrongOnly?'review':'full')});
+ const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString(),correctCount:correctKeys.length,totalCount:correctKeys.length+wrongKeys.length,scope:source||(retryWrongOnly?'review':'full')});
  correctKeys.forEach(k=>{const w=state.wrong[lv+':'+k];if(w)w.active=false;if(lv===3&&state.wrong['0:'+k])state.wrong['0:'+k].active=false;});
  [...new Set(wrongKeys)].forEach(k=>{const id=lv+':'+k,w=state.wrong[id]??={key:k,level:lv,count:0,chapter:+k.split(':')[0],verse:+k.split(':')[1]};const d=wrongDetails[k]||{};w.active=true;w.count++;w.last=now.toISOString();w.text=state.verses[k];w.lastMine=d.mine??'';w.lastExpected=d.expected??w.text;w.parts=d.parts||null;w.mode=d.mode;});if(lv===3)updateReviewSchedule(correctKeys,wrongKeys,now);updateStreak(now);save();
 }
@@ -232,28 +232,35 @@ function renderHome(){
   }).join('');
 }
 
+const DAILY_VERSES=[["우리가 선을 행하되 낙심하지 말찌니 피곤하지 아니하면 때가 이르매 거두리라","갈라디아서 6:9","gal",6,9],["내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라","빌립보서 4:13","php",4,13],["대저 의인은 일곱번 넘어질찌라도 다시 일어나려니와 악인은 재앙으로 인하여 엎드러지느니라","잠언 24:16","pro",24,16]],DAILY_QUOTES=[["잘 말하는 것보다 잘 실행하는 것이 낫다.","벤저민 프랭클린 · 한국어 번역","https://upload.wikimedia.org/wikipedia/commons/6/66/Poor_Richard%27s_almanack_%28IA_poorrichardsalma00franrich%29.pdf"],["천 리 길도 발밑의 한 걸음에서 시작된다.","노자 · 도덕경 64장 · 한국어 번역","https://www.schoolofphilosophy.org/quotes/a-journey-of-a-thousand-miles-begins-with-a-sing-lao-tzu"]];
+function todayEncouragement(){
+ const day=Math.floor(Date.parse(studyDate(new Date()))/86400000),v=DAILY_VERSES[day%DAILY_VERSES.length],q=DAILY_QUOTES[day%DAILY_QUOTES.length];
+ return '<div><b>오늘의 명언</b><blockquote>'+esc(q[0])+'</blockquote><a class="tiny muted" href="'+q[2]+'" target="_blank" rel="noopener noreferrer">'+esc(q[1])+'</a><p><b>오늘의 성구</b></p><p>'+esc(v[0])+'</p><a class="tiny muted" href="https://www.bskorea.or.kr/bible/korbibReadpage.php?version=HAN&book='+v[2]+'&chap='+v[3]+'&sec='+v[4]+'" target="_blank" rel="noopener noreferrer">'+v[1]+' · 개역한글</a></div>';
+}
 let statsChapter=1;
 function studyDate(d){return new Date(d).toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'});}
 function fullRuns(ch,lv=3){return state.history.filter(h=>h.chapter===ch&&h.level===lv&&h.scope==='full').sort((a,b)=>new Date(a.date)-new Date(b.date));}
 function masterWins(ch){return fullRuns(ch).filter(h=>h.score===100).length;}
 function renderStats(){
  const today=studyDate(new Date()),days=Math.max(0,Math.floor((Date.parse('2026-11-20')-Date.parse(today))/86400000)+1),pending=Array.from({length:22},(_,i)=>i+1).filter(c=>masterWins(c)<3),needed=pending.reduce((n,c)=>n+Math.max(0,3-masterWins(c)),0);
- $('#goalPlan').innerHTML='<h3>11월 20일 · 22장 완성</h3><b>'+(22-pending.length)+'/22장 MASTER · 남은 '+days+'일</b><p>'+(pending.length?(days?'하루 약 '+Math.ceil(pending.length/days)+'장씩 집중하고, 장 전체 시험에서 하루 '+Math.ceil(needed/days)+'회 100점을 목표로 해 보세요.':'목표일이 지났어요. 남은 장을 확인하고 다음 목표를 정해 보세요.'):'22장을 모두 완성했어요. 간격을 두고 복습하세요.')+'</p><p>오늘은 '+(pending.slice(0,Math.max(1,days?Math.ceil(pending.length/days):1)).join('·')||'복습')+(pending.length?'장부터 시작해요. 읽기 → 가리고 쓰기 → 오답 확인, 다음 날 다시 확인해요.':'에 도전해요.')+'</p><p class="tiny muted">MASTER · 3단계 장 전체 100점 3회</p><blockquote>작은 반복을 오늘의 실력으로 바꾸세요.<br><small>— RV-M 학습 문장</small></blockquote><details><summary>오늘의 성구 · 계 1:3</summary>'+esc(state.verses['1:3']||'')+'</details>';
+ $('#goalPlan').innerHTML='<h3>11월 20일 · 22장 완성</h3><b>'+(22-pending.length)+'/22장 MASTER · 남은 '+days+'일</b><p>'+(pending.length?(days?'하루 약 '+Math.ceil(pending.length/days)+'장씩 집중하고, 장 전체 시험에서 하루 '+Math.ceil(needed/days)+'회 100점을 목표로 해 보세요.':'목표일이 지났어요. 남은 장을 확인하고 다음 목표를 정해 보세요.'):'22장을 모두 완성했어요. 간격을 두고 복습하세요.')+'</p><p>오늘은 '+(pending.slice(0,Math.max(1,days?Math.ceil(pending.length/days):1)).join('·')||'복습')+(pending.length?'장부터 시작해요. 읽기 → 가리고 쓰기 → 오답 확인, 다음 날 다시 확인해요.':'에 도전해요.')+'</p><p class="tiny muted">MASTER · 3단계 장 전체 100점 3회</p>'+todayEncouragement();
  const groups={};state.history.forEach(h=>(groups[studyDate(h.date)]??=[]).push(h));
  $('#dailyStudy').innerHTML=Object.keys(groups).sort().reverse().map(d=>{const r=groups[d];return '<details><summary>'+d+' · '+r.length+'회 · '+new Set(r.map(h=>h.chapter)).size+'개 장</summary>'+[1,2,3].map(l=>{const v=r.filter(h=>h.level===l);return '<p>'+l+'단계 '+v.length+'회'+(v.length?' · 평균 '+Math.round(v.reduce((n,h)=>n+h.score,0)/v.length)+'점':'')+'</p>'}).join('')+'<p>학습한 장: '+[...new Set(r.map(h=>h.chapter))].sort((a,b)=>a-b).join(', ')+'</p></details>'}).join('')||'<p>첫 제출 후 학습 기록이 보여요.</p>';
  $('#chapterScores').innerHTML=Array.from({length:22},(_,i)=>{const c=i+1,r=fullRuns(c),wins=masterWins(c);return '<button class="score-tile" aria-pressed="'+(c===statsChapter)+'" onclick="statsChapter='+c+';renderStats()"><b>'+c+'장</b><span>'+(r.length?Math.max(...r.map(h=>h.score))+'점':'—')+'</span><small>'+(wins>=3?'MASTER':'100점 '+wins+'/3')+'</small></button>'}).join('');
  $('#growthLevel').onchange=renderGrowth;renderGrowth();
 }
+
 function renderGrowth(){
  const lv=+$('#growthLevel').value,r=fullRuns(statsChapter,lv);
  $('#growthTitle').textContent=statsChapter+'장 성장곡선';
- const note='<p class="tiny muted">장 전체 시험 기준. 예전 기록은 시험 범위를 확인할 수 없어 날짜별 학습에만 표시해요.</p>';
- if(!r.length){$('#growthChart').innerHTML='<p>이 단계의 장 전체 시험을 제출하면 곡선이 시작돼요.</p>'+note;$('#strategyBox').textContent='먼저 한 번 풀어 현재 점수를 확인해 보세요.';return;}
- const t=r.map(h=>+new Date(h.date)),span=t.at(-1)-t[0],point=(h,i)=>[span?40+(t[i]-t[0])/span*300:190,150-h.score*1.2];
- const grid=[0,50,100].map(n=>'<line x1="40" y1="'+(150-n*1.2)+'" x2="340" y2="'+(150-n*1.2)+'" stroke="#ddd5c8"/><text x="5" y="'+(154-n*1.2)+'">'+n+'</text>').join('');
- $('#growthChart').innerHTML='<svg viewBox="0 0 370 195" role="img" aria-label="'+statsChapter+'장 시간별 점수"><g font-size="11">'+grid+'<polyline points="'+r.map((h,i)=>point(h,i).join(',')).join(' ')+'" fill="none" stroke="#5c4b3b" stroke-width="2"/>'+r.map((h,i)=>{const [x,y]=point(h,i);return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="#9c7b5b"><title>'+studyDate(h.date)+' · '+h.score+'점</title></circle>'}).join('')+'<text x="40" y="180">'+studyDate(r[0].date)+'</text><text x="340" y="180" text-anchor="end">'+studyDate(r.at(-1).date)+'</text></g></svg><p>첫 점수 '+r[0].score+' → 최근 '+r.at(-1).score+'점 · '+r.length+'회</p>'+note;
+ const note='<p class="tiny muted">가로: 제출 순서 · 세로: 정답률(%) · 장 전체 시험</p>';
+ if(!r.length){$('#growthChart').innerHTML='<p>장 전체 시험을 제출하면 곡선이 시작돼요.</p>';$('#strategyBox').textContent='먼저 한 번 풀어 현재 점수를 확인해 보세요.';return;}
+ const point=(h,i)=>[r.length>1?40+i/(r.length-1)*300:190,150-h.score*1.2];
+ const detail=(h,i)=>(i+1)+'회 · '+h.score+'%'+(Number.isFinite(h.correctCount)?' · '+h.correctCount+'/'+h.totalCount+'절 정답':' · 정답 개수 미기록');
+ const grid=[0,50,100].map(n=>'<line x1="40" y1="'+(150-n*1.2)+'" x2="340" y2="'+(150-n*1.2)+'" stroke="#ddd5c8"/><text x="3" y="'+(154-n*1.2)+'">'+n+'%</text>').join('');
+ $('#growthChart').innerHTML='<svg viewBox="0 0 370 195" role="img" aria-label="'+statsChapter+'장 제출별 정답률"><g font-size="11">'+grid+'<polyline points="'+r.map((h,i)=>point(h,i).join(',')).join(' ')+'" fill="none" stroke="#5c4b3b" stroke-width="2"/>'+r.map((h,i)=>{const [x,y]=point(h,i);return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="#9c7b5b"><title>'+detail(h,i)+'</title></circle>'}).join('')+'<text x="40" y="180">1회 제출</text><text x="340" y="180" text-anchor="end">'+r.length+'회 제출</text></g></svg><p>첫 정답률 '+r[0].score+'% → 최근 '+r.at(-1).score+'%</p>'+note+'<details><summary>제출별 정답 보기</summary>'+r.map((h,i)=>'<p>'+detail(h,i)+'</p>').join('')+'</details>';
  const last=r.at(-1).score;
- $('#strategyBox').innerHTML='<b>다음 학습</b><p>'+(last===100?'다음 날 본문을 보지 않고 다시 써 보세요.':last>=80?'틀린 구절을 먼저 연습하고 장 전체를 다시 써 보세요.':last>=50?'짧은 구절 묶음으로 나눠 1·2단계부터 연습하세요.':'본문을 짧게 나눠 읽고 가린 뒤 써 보세요.')+'</p><p class="tiny muted">오래 기억하는지는 날짜를 달리한 재시험으로 확인해요.</p>';
+ $('#strategyBox').innerHTML='<b>다음 학습</b><p>'+(last===100?'다음 날 본문을 보지 않고 다시 써 보세요.':last>=80?'틀린 구절을 먼저 연습하고 장 전체를 다시 써 보세요.':last>=50?'짧은 구절 묶음으로 나눠 1·2단계부터 연습하세요.':'본문을 짧게 나눠 읽고 가린 뒤 써 보세요.')+'</p>';
 }
 function updateProgress(){const m=chapterMastery(chapter);$('#chapterProgress').style.width=m.pct+'%';$('#chapterProgressText').textContent=`통암기 ${m.done}/${m.total}절 · ${m.pct.toFixed(1)}%`}
 function updateHeader(){$('#todayStreak').textContent=`연속 학습 ${state.streak||0}일`;$('#totalAttempts').textContent=`총 ${state.history.length}회 제출`}
