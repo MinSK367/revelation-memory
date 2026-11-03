@@ -26,6 +26,7 @@ textarea{width:100%;min-height:330px;border:1px solid var(--line);border-radius:
 summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding:10px 0}button:disabled{opacity:.5;cursor:default}.wrong-tabs{gap:6px}.wrong-tabs .btn{flex:1;padding:10px 6px;white-space:nowrap}.star{color:#956211}.frequent{border:1px solid #ddc99d;background:#fff9ec;border-radius:12px;padding:0 12px}.answer-detail{margin:8px 0 12px}.important-verses p{margin:0;padding:10px 0;line-height:1.7;overflow-wrap:anywhere}.important-verses p+p{border-top:1px solid #e8dcc0}.important-verses b{color:var(--accent);margin-right:6px}.diff-line{overflow-wrap:anywhere}.main,.side{min-width:0}select{padding:10px;border:1px solid var(--line);border-radius:10px;background:white}.wrong-chapter{margin:20px 0}.chapter-picker{margin-top:12px}.btn{min-height:44px}input,textarea{font-size:16px}.level{font:inherit;text-align:left}.level:focus-visible,summary:focus-visible{outline:2px solid var(--accent)}
 @media(max-width:600px){.app{padding:12px}.hero{gap:10px;margin-bottom:12px}.brand{font-size:10px}.hero h1{font-size:25px}.hero p{font-size:13px}.grid{gap:12px}.side{padding:10px;display:flex;flex-wrap:wrap;gap:3px}.navbtn{width:auto;flex:1;white-space:nowrap;text-align:center;padding:10px 5px;font-size:12px;min-height:44px}.chapter-picker{width:100%;margin:0}.side>.section-title,.side>.progress,.side>#chapterProgressText{display:none}.main{padding:14px;min-height:420px;border-radius:16px}h2{font-size:21px;margin:4px 0 10px}h3{font-size:17px}.card{padding:12px;margin:12px 0;border-radius:12px}.levels{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}.level{padding:10px 6px;border-radius:10px}.level strong{font-size:12px}.level span{display:none}.verse{font-size:16px}.verse-input-wrap{grid-template-columns:30px minmax(0,1fr);gap:6px}.verse-input{padding:10px}.stat{padding:10px}.stat .muted{font-size:12px}.home-summary .stat b{font-size:23px}.wrong-item{padding:10px}.empty{padding:28px 10px}.muted{line-height:1.55}.wrong-tabs .btn{font-size:13px}.home-bar-row{gap:6px}.blank{max-width:100%;min-width:0}.heat{grid-template-columns:repeat(11,minmax(0,1fr))}}
 .inline-diff{display:block;line-height:1.8;font-size:14px;overflow-wrap:anywhere;color:var(--ink)}.verse-input-wrap>.inline-diff{grid-column:2}.chapter-scores{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.score-tile{padding:12px 4px;border:1px solid var(--line);border-radius:12px;background:white;cursor:pointer}.score-tile>*{display:block}.score-tile span{font-size:20px;margin:5px}.score-tile small{font-size:11px;color:var(--ok)}.score-tile[aria-pressed=true]{outline:2px solid var(--accent)}#dailyStudy{max-height:300px;overflow:auto}#growthChart svg{width:100%;max-height:300px}#goalPlan blockquote{margin:12px 0;padding-left:12px;border-left:3px solid var(--accent2)}
+.flashcard textarea{min-height:150px;margin:12px 0}.flashcard label{display:block;font-size:14px}.flashcard h3{font-size:22px}.flashcard #cardFeedback{margin-top:14px}
 </style>
 </head>
 <body>
@@ -35,6 +36,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
     <aside class="panel side">
       <button class="navbtn active" data-view="home">🏠 홈</button>
       <button class="navbtn" data-view="study">✍️ 암기 훈련</button>
+      <button class="navbtn" data-view="cards">🎴 랜덤카드</button>
       <button class="navbtn" data-view="wrong">📕 오답 노트</button>
       <button class="navbtn" data-view="stats">📊 진도·수준</button>
       <button class="navbtn" data-view="data">⚙️ 본문 관리</button>
@@ -63,7 +65,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
         <div id="studyArea"></div>
       </section>
       <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">다시 풀어 맞히면 목록에서 사라져요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><label for="wrongChapterFilter">장</label><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
-<section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 목록에서 사라지고, 틀린 횟수는 남아요.</p></details></section>
+<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">한 절을 기억해서 쓰고, 맞히면 다음 카드로!</p><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 목록에서 사라지고, 틀린 횟수는 남아요.</p></details></section>
     </main>
   </div>
 </div>
@@ -185,10 +187,10 @@ function gradeFull(entries){
 }
 function levelLabel(score){return score>=90?'잘 기억하고 있어요':score>=75?'조금 더 연습해요':score>=60?'빈칸부터 연습해요':'본문부터 읽어 봐요'}
 function showResult(score,wrongN,extra='',correctN=null,totalN=null){const exactMsg=correctN!==null?`정답 ${correctN}/${totalN}절 · 오답 ${wrongN}개`:`오답 ${wrongN}개`;$('#resultBox').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><div><div class="score">${score}<small>/100</small></div><b>${levelLabel(score)}</b><div class="muted">${exactMsg} · 띄어쓰기·문장부호는 채점 제외</div></div><div class="row"><button class="btn secondary" onclick="showView('wrong')">오답 보기</button><button class="btn ghost" onclick="renderStudy()">다시 풀기</button></div></div></div>${extra}`;renderAll(false)}
-function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[]){
- const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString(),scope:retryWrongOnly?'review':'full'});
+function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[],source=null){
+ const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString(),scope:source||(retryWrongOnly?'review':'full')});
  correctKeys.forEach(k=>{const w=state.wrong[lv+':'+k];if(w)w.active=false;if(lv===3&&state.wrong['0:'+k])state.wrong['0:'+k].active=false;});
- [...new Set(wrongKeys)].forEach(k=>{const id=lv+':'+k,w=state.wrong[id]??={key:k,level:lv,count:0,chapter:+k.split(':')[0],verse:+k.split(':')[1]};const d=wrongDetails[k]||{};w.active=true;w.count++;w.last=now.toISOString();w.text=state.verses[k];w.lastMine=d.mine??'';w.lastExpected=d.expected??w.text;w.parts=d.parts||null;w.mode=d.mode;});updateStreak(now);save();
+ [...new Set(wrongKeys)].forEach(k=>{const id=lv+':'+k,w=state.wrong[id]??={key:k,level:lv,count:0,chapter:+k.split(':')[0],verse:+k.split(':')[1]};const d=wrongDetails[k]||{};w.active=true;w.count++;w.last=now.toISOString();w.text=state.verses[k];w.lastMine=d.mine??'';w.lastExpected=d.expected??w.text;w.parts=d.parts||null;w.mode=d.mode;});if(lv===3)updateReviewSchedule(correctKeys,wrongKeys,now);updateStreak(now);save();
 }
 function updateStreak(now){const d=now.toISOString().slice(0,10);if(!state.lastStudy){state.streak=1}else{const prev=new Date(state.lastStudy);const diff=Math.round((new Date(d)-new Date(prev.toISOString().slice(0,10)))/86400000);if(diff===1)state.streak++;else if(diff>1)state.streak=1}state.lastStudy=now.toISOString()}
 function renderWrong(){
@@ -255,7 +257,7 @@ function renderGrowth(){
 }
 function updateProgress(){const m=chapterMastery(chapter);$('#chapterProgress').style.width=m.pct+'%';$('#chapterProgressText').textContent=`통암기 ${m.done}/${m.total}절 · ${m.pct.toFixed(1)}%`}
 function updateHeader(){$('#todayStreak').textContent=`연속 학습 ${state.streak||0}일`;$('#totalAttempts').textContent=`총 ${state.history.length}회 제출`}
-function showView(name){$$('main section').forEach(s=>s.classList.add('hidden'));$('#'+name+'View').classList.remove('hidden');$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderHome();if(name==='wrong')renderWrong();if(name==='stats')renderStats()}
+function showView(name){$$('main section').forEach(s=>s.classList.add('hidden'));$('#'+name+'View').classList.remove('hidden');$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderHome();if(name==='wrong')renderWrong();if(name==='stats')renderStats();if(name==='cards')renderCards()}
 window.showView=showView;
 $$('.navbtn').forEach(b=>b.onclick=()=>showView(b.dataset.view));$$('.level').forEach(el=>el.onclick=()=>{level=+el.dataset.level;retryWrongOnly=false;$$('.level').forEach(x=>x.classList.toggle('active',x===el));renderStudy()});
 $('#importBtn').onclick=()=>{const parsed=parseText($('#importText').value);const n=Object.keys(parsed).length;if(!n){alert('인식할 수 있는 구절이 없습니다. 예: 1:1 본문');return}state.verses={...state.verses,...parsed};save();alert(`${n}개 구절을 저장했습니다.`);renderAll();showView('study')};
@@ -263,6 +265,58 @@ $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],
 $('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);migrateWrong(o);const retained=state.wrong;Object.assign(state,o);state.wrong={...o.wrong};Object.entries(retained).forEach(([id,w])=>{const imported=state.wrong[id];state.wrong[id]={...(imported||{}),...w,count:Math.max(w.count||0,imported?.count||0),active:w.active!==false||imported?.active===true};});save();renderAll();alert('학습 데이터를 불러왔습니다.')}catch{alert('올바른 JSON 파일이 아닙니다.')}};r.readAsText(f)};
 $('#retryWrongBtn').onclick=()=>{const v=$('#wrongChapterFilter').value,rows=activeWrong(wrongLevel).filter(w=>v==='all'||w.chapter===+v).sort((a,b)=>a.chapter-b.chapter);if(!rows.length)return;chapter=rows[0].chapter;level=wrongLevel||3;retryWrongOnly=true;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});};
 function renderAll(study=true){renderChapters();updateProgress();updateHeader();renderHome();if(study)renderStudy();renderStats()}
+
+function addStudyDays(day,n){return new Date(Date.parse(day)+n*86400000).toISOString().slice(0,10);}
+function updateReviewSchedule(correct,wrong,now){
+ state.reviewSchedule??={};const day=studyDate(now);
+ wrong.forEach(k=>{state.reviewSchedule[k]={step:0,due:day,lastWrong:day};});
+ correct.forEach(k=>{const old=state.reviewSchedule[k]||{};if(old.lastCorrect===day)return;const step=Math.min((old.step||0)+1,3);state.reviewSchedule[k]={step,due:addStudyDays(day,[1,3,7][step-1]),lastCorrect:day};});
+}
+function cardPriority(k,today){
+ const due=state.reviewSchedule?.[k]?.due;
+ if(due&&due<today)return 0;
+ if(activeWrong().some(w=>w.key===k&&w.count>=3))return 1;
+ if(due&&due<=today)return 2;
+ if(activeWrong().some(w=>w.key===k))return 3;
+ if(state.mastery[k])return 4;
+ return 5;
+}
+function shuffleCards(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function ensureCardDay(){
+ const today=studyDate(new Date());state.reviewSchedule??={};
+ // Existing mastery has no review timestamp; make it eligible from today.
+ Object.keys(state.mastery).filter(k=>state.mastery[k]&&!state.reviewSchedule[k]).forEach(k=>state.reviewSchedule[k]={step:0,due:today});
+ if(state.cardDay?.date===today)return;
+ const groups=Array.from({length:6},()=>[]);
+ Object.keys(state.verses).forEach(k=>{const r=state.reviewSchedule[k];if(r?.lastCorrect===today)return;if(r?.due>today&&!activeWrong().some(w=>w.key===k))return;groups[cardPriority(k,today)].push(k)});
+ state.cardDay={date:today,keys:groups.flatMap(shuffleCards).slice(0,10),done:[],attempts:0};save();
+}
+let cardTransition=false;
+function renderCards(){
+ ensureCardDay();cardTransition=false;const day=state.cardDay,k=day.keys.find(k=>!day.done.includes(k));
+ if(!k){$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'오늘의 카드 완료!':'오늘 복습할 카드가 없어요.')+'</h3><p>'+day.done.length+'절 완료 · '+day.attempts+'회 도전</p><button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';return;}
+ const [ch,v]=k.split(':'),reason=['밀린 복습','중요 성구','오늘 복습','오답 복습','기억 확인','새 구절'][cardPriority(k,day.date)];
+ $('#cardArea').innerHTML='<div class="row"><span class="badge">'+day.done.length+' / '+day.keys.length+'절 완료</span><span class="muted">3단계 · '+reason+'</span></div><div class="card flashcard"><h3>요한계시록 '+ch+'장 '+v+'절</h3><form id="cardForm"><label for="cardAnswer">이 절을 처음부터 끝까지 써 보세요.</label><textarea id="cardAnswer" rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary" type="submit">정답 확인</button></form><div id="cardFeedback" aria-live="polite"></div></div>';
+ $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k);};
+}
+function gradeCard(k){
+ if(cardTransition||state.cardDay.date!==studyDate(new Date())){if(!cardTransition)renderCards();return;}
+ const input=$('#cardAnswer'),mine=input.value,expected=state.verses[k];if(!mine.trim()){input.focus();return;}
+ cardTransition=true;const ok=isExact(mine,expected),oldChapter=chapter;chapter=+k.split(':')[0];
+ state.cardDay.attempts++;
+ if(ok){state.mastery[k]=true;state.cardDay.done.push(k);}
+ recordAttempt(3,ok?100:0,ok?[]:[k],ok?{}:{[k]:{mine,expected,mode:'verse'}},ok?[k]:[],'card');
+ chapter=oldChapter;input.readOnly=true;$('#cardForm button').disabled=true;
+ if(ok){
+ $('#cardFeedback').innerHTML='<p class="exact-ok">정답! 다음 카드로 넘어가요.</p>';
+ setTimeout(()=>{if(!$('#cardsView').classList.contains('hidden')){renderCards();$('#cardAnswer')?.focus();}else cardTransition=false;},700);
+ }else{
+ const d=diffMarked(expected,mine);$('#cardFeedback').innerHTML='<div class="inline-diff"><b>정답</b><div>'+d.expected+'</div><b>내 답</b><div>'+d.mine+'</div></div><button class="btn secondary" id="cardRetry">가리고 다시 쓰기</button>';
+ $('#cardRetry').onclick=()=>{renderCards();$('#cardAnswer').focus();};
+ }
+ renderAll(false);
+}
+
 renderAll();
 </script>
 </body></html>
