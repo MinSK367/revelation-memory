@@ -27,6 +27,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
 @media(max-width:600px){.app{padding:12px}.hero{gap:10px;margin-bottom:12px}.brand{font-size:10px}.hero h1{font-size:25px}.hero p{font-size:13px}.grid{gap:12px}.side{padding:10px;display:flex;flex-wrap:wrap;gap:3px}.navbtn{width:auto;flex:1;white-space:nowrap;text-align:center;padding:10px 5px;font-size:12px;min-height:44px}.chapter-picker{width:100%;margin:0}.side>.section-title,.side>.progress,.side>#chapterProgressText{display:none}.main{padding:14px;min-height:420px;border-radius:16px}h2{font-size:21px;margin:4px 0 10px}h3{font-size:17px}.card{padding:12px;margin:12px 0;border-radius:12px}.levels{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}.level{padding:10px 6px;border-radius:10px}.level strong{font-size:12px}.level span{display:none}.verse{font-size:16px}.verse-input-wrap{grid-template-columns:30px minmax(0,1fr);gap:6px}.verse-input{padding:10px}.stat{padding:10px}.stat .muted{font-size:12px}.home-summary .stat b{font-size:23px}.wrong-item{padding:10px}.empty{padding:28px 10px}.muted{line-height:1.55}.wrong-tabs .btn{font-size:13px}.home-bar-row{gap:6px}.blank{max-width:100%;min-width:0}.heat{grid-template-columns:repeat(11,minmax(0,1fr))}}
 .inline-diff{display:block;line-height:1.8;font-size:14px;overflow-wrap:anywhere;color:var(--ink)}.verse-input-wrap>.inline-diff{grid-column:2}.chapter-scores{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.score-tile{padding:12px 4px;border:1px solid var(--line);border-radius:12px;background:white;cursor:pointer}.score-tile>*{display:block}.score-tile span{font-size:20px;margin:5px}.score-tile small{font-size:11px;color:var(--ok)}.score-tile[aria-pressed=true]{outline:2px solid var(--accent)}#dailyStudy{max-height:300px;overflow:auto}#growthChart svg{width:100%;max-height:300px}#goalPlan blockquote{margin:12px 0;padding-left:12px;border-left:3px solid var(--accent2)}
 .flashcard textarea{min-height:150px;margin:12px 0}.flashcard label{display:block;font-size:14px}.flashcard h3{font-size:22px}.flashcard #cardFeedback{margin-top:14px}
+
+.graded-answer{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);font-weight:400;cursor:text}
+.graded-answer.blank{font-size:16px;display:inline-block;vertical-align:middle;max-height:160px;overflow:auto}
+.graded-answer.verse-input{width:100%;overflow:auto;resize:vertical}
+.graded-answer .diff-char{color:var(--bad);font-weight:inherit;text-decoration:none}
 </style>
 </head>
 <body>
@@ -94,14 +99,32 @@ function norm(s){return (s||'').replace(/[\s\n\r\t.,!?;:'"“”‘’·…()\[\
 function exactText(s){return (s||'').normalize('NFC').replace(/[\s\p{P}\p{S}]/gu,'').toLowerCase();}
 function isExact(a,b){return exactText(a)===exactText(b);}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function gradeCharMap(s){const raw=String(s??'').normalize('NFC'),chars=[];for(let i=0;i<raw.length;i++){const c=raw[i];if(!/[\s\p{P}\p{S}]/u.test(c))chars.push({c:c.toLowerCase(),rawIndex:i})}return {raw,chars};}
+function gradeCharMap(s){const raw=String(s??'').normalize('NFC'),chars=[];[...raw].forEach((c,i)=>{if(!/[\s\p{P}\p{S}]/u.test(c))chars.push({c:c.toLowerCase(),rawIndex:i})});return {raw,chars};}
 function diffMarked(expected,mine){
   const A=gradeCharMap(expected),B=gradeCharMap(mine),a=A.chars.map(x=>x.c),b=B.chars.map(x=>x.c),m=a.length,n=b.length;
   const dp=Array.from({length:m+1},()=>new Uint16Array(n+1));
   for(let i=m-1;i>=0;i--)for(let j=n-1;j>=0;j--)dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
-  const matchA=new Set(),matchB=new Set();let i=0,j=0;while(i<m&&j<n){if(a[i]===b[j]){matchA.add(A.chars[i].rawIndex);matchB.add(B.chars[j].rawIndex);i++;j++}else if(dp[i+1][j]>=dp[i][j+1])i++;else j++;}
+  const matchA=new Set(),matchB=new Set(),missingAt=[];let i=0,j=0;while(i<m&&j<n){if(a[i]===b[j]){matchA.add(A.chars[i].rawIndex);matchB.add(B.chars[j].rawIndex);i++;j++}else if(dp[i+1][j]>=dp[i][j+1]){missingAt.push(j);i++;}else j++;}
+  if(i<m)missingAt.push(n);
   const mark=(raw,matches)=>[...raw].map((c,idx)=>{if(/[\s\p{P}\p{S}]/u.test(c)||matches.has(idx))return esc(c);return `<span class="diff-char">${esc(c)}</span>`}).join('');
-  return {expected:mark(A.raw,matchA),mine:mark(B.raw,matchB)};
+  const inputMatches=new Set(matchB);
+  // Missing letters have no glyph in the answer: color the nearest entered letter.
+  missingAt.forEach(at=>{if(n)inputMatches.delete(B.chars[Math.min(at,n-1)].rawIndex);});
+  return {expected:mark(A.raw,matchA),mine:mark(B.raw,matchB),input:mark(B.raw,inputMatches),hasMissing:missingAt.length>0};
+}
+// Native textareas cannot color individual characters. Keep the same box as a read-only result.
+function showGradedInput(input,expected){
+  const result=document.createElement(input.tagName==='TEXTAREA'?'div':'span');
+  const d=diffMarked(expected,input.value),height=input.getBoundingClientRect().height;
+  result.className=input.className+' graded-answer';result.style.cssText=input.style.cssText;
+  if(input.tagName==='TEXTAREA')result.style.height=height+'px';
+  result.setAttribute('role','textbox');result.setAttribute('aria-readonly','true');
+  result.setAttribute('aria-label',input.getAttribute('aria-label')||'채점한 답');
+  if(input.tagName==='TEXTAREA')result.setAttribute('aria-multiline','true');
+  result.tabIndex=0;result.dataset.key=input.dataset.key;
+  result.innerHTML=d.input||'<span class="diff-char">(입력 없음)</span>';
+  if(d.hasMissing)result.title='빠진 글자가 있어요. 빠진 위치 옆 글자를 빨간색으로 표시했어요.';
+  input.replaceWith(result);
 }
 function verseEntries(ch=chapter){return Object.entries(state.verses).filter(([k])=>+k.split(':')[0]===ch).sort((a,b)=>+a[0].split(':')[1]-+b[0].split(':')[1]);}
 function parseText(txt){const out={};for(const raw of txt.split(/\n+/)){const line=raw.trim();if(!line)continue;let m=line.match(/^(?:계(?:시록)?\s*)?(\d{1,2})\s*[:장]\s*(\d{1,2})\s*(?:절)?\s*[.)-]?\s*(.+)$/);if(!m)m=line.match(/^(\d{1,2})\s+(\d{1,2})\s+(.+)$/);if(m){let ch=+m[1],v=+m[2];if(ch>=1&&ch<=22&&v>0)out[`${ch}:${v}`]=m[3].trim()}}return out}
@@ -170,7 +193,7 @@ function renderL1(entries){const chapterEntries=entries;entries=targetEntries(en
 function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">한 절의 빈칸 두 곳을 모두 맞혀 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
 function gradeBlanks(lv){
  const inputs=$$('.blank[data-answer]');if(!inputs.length||$('#quizForm button[type="submit"]').disabled)return;
- const groups={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');if(!ok){const d=diffMarked(expected,inp.value);inp.insertAdjacentHTML('afterend',`<span class="inline-diff">정답: ${d.expected}<br>내 답: ${d.mine||'(입력 없음)'}</span>`);}inp.readOnly=true;});
+ const groups={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');showGradedInput(inp,expected);});
  const keys=Object.keys(groups),wrongKeys=keys.filter(k=>groups[k].some(x=>!x.ok)),correctKeys=keys.filter(k=>!wrongKeys.includes(k)),details={};
  wrongKeys.forEach(k=>details[k]={parts:groups[k],mine:groups[k].map(x=>x.mine).join(' / '),expected:groups[k].map(x=>x.expected).join(' / '),mode:'blank'});
  $('#quizForm button[type="submit"]').disabled=true;
@@ -194,7 +217,8 @@ function gradeFull(entries){
     inp?.classList.remove('correct','wrong');inp?.classList.add(ok?'correct':'wrong');
     if(inp)inp.readOnly=true;
     if(ok){correctKeys.push(k);state.mastery[k]=true;}
-    else{wrongKeys.push(k);wrongDetails[k]={mine,expected:t,mode:'verse'};const d=diffMarked(t,mine);inp.insertAdjacentHTML('afterend',`<div class="inline-diff">정답: ${d.expected}<br>내 답: ${d.mine||'(입력 없음)'}</div>`);}
+    else{wrongKeys.push(k);wrongDetails[k]={mine,expected:t,mode:'verse'};}
+    if(inp)showGradedInput(inp,t);
   });
   const score=Math.round((correctKeys.length/(entries.length||1))*100);
   recordAttempt(3,score,wrongKeys,wrongDetails,correctKeys);
