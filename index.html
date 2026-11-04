@@ -32,6 +32,18 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
 .graded-answer.blank{font-size:16px;display:inline-block;vertical-align:middle;max-height:160px;overflow:auto}
 .graded-answer.verse-input{width:100%;overflow:auto;resize:vertical}
 .graded-answer .diff-char{color:var(--bad);font-weight:inherit;text-decoration:none}
+
+.plan-heading,.calendar-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.plan-heading h3,.calendar-heading h3{margin:0}.plan-heading p{margin:6px 0 0}
+#planStartDate{display:block;margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:8px;background:white;max-width:100%}
+.plan-weeks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.plan-week{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}.plan-week.current{border-color:var(--accent2);background:#f8f1e7}.plan-week b{font-size:14px}.plan-week strong{display:block;font-size:24px;margin:10px 0}.plan-week .tiny{margin-top:8px}
+.plan-today{border-top:1px solid var(--line);padding-top:14px}.plan-today p{margin:8px 0}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.calendar-weekday{text-align:center;font-size:12px;color:var(--muted);padding:8px 0}
+.cal-day{border:1px solid var(--line);border-radius:10px;background:white;padding:8px 3px;min-width:0;min-height:100px;cursor:pointer;color:var(--ink);font-size:11px;display:flex;flex-direction:column;gap:5px;align-items:center}
+.cal-day b{font-size:16px}.cal-day .cal-goal{white-space:nowrap}.cal-day.missed .cal-goal{color:var(--bad)}.cal-day small{font-size:10px;color:var(--muted)}.cal-day.today b{background:var(--accent);color:white;border-radius:50%;min-width:24px;line-height:24px}.cal-day.achieved{background:#eef9f2;border-color:#b9dfc7}.cal-day.achieved .cal-goal,.review-done{color:var(--ok);font-weight:800}.cal-day[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}.cal-day:focus-visible{outline:3px solid var(--accent)}
+.calendar-detail{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}.calendar-detail p{margin:10px 0}.plan-chapters{display:flex;flex-wrap:wrap;gap:6px}.plan-chapters .task-done{background:#e8f6ed;color:var(--ok)}
+@media(max-width:600px){.plan-weeks{grid-template-columns:1fr}.plan-week{display:grid;grid-template-columns:1fr auto;gap:6px 12px}.plan-week strong{grid-column:2;grid-row:1 / 3;font-size:20px;margin:0}.plan-week .tiny{margin-top:0}.plan-week .progress{grid-column:1 / -1}.calendar-grid{gap:3px}.cal-day{padding:6px 1px;font-size:10px;border-radius:7px;min-height:94px}.calendar-heading .btn{padding:8px 12px}.calendar-heading h3{font-size:18px}}
 </style>
 </head>
 <body>
@@ -70,7 +82,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
         <div id="studyArea"></div>
       </section>
       <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">다시 풀어 맞히면 목록에서 사라져요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><label for="wrongChapterFilter">장</label><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
-<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">한 번이라도 틀린 구절만 복습해요. 맞히면 다음 카드로!</p><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 목록에서 사라지고, 틀린 횟수는 남아요.</p></details></section>
+<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">한 번이라도 틀린 구절만 복습해요. 맞히면 다음 카드로!</p><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 목록에서 사라지고, 틀린 횟수는 남아요.</p></details></section>
     </main>
   </div>
 </div>
@@ -282,9 +294,63 @@ let statsChapter=1;
 function studyDate(d){return new Date(d).toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'});}
 function fullRuns(ch,lv=3){return state.history.filter(h=>h.chapter===ch&&h.level===lv&&h.scope==='full').sort((a,b)=>new Date(a.date)-new Date(b.date));}
 function masterWins(ch){return fullRuns(ch).filter(h=>h.score===100).length;}
+let calendarMonth=studyDate(new Date()).slice(0,7),calendarSelected=studyDate(new Date());
+const PLAN_LABELS=['3단계 3회 제출','3단계 100점 1회','마스터 달성'];
+function planStart(){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(state.studyPlan?.start||'')){state.studyPlan={start:studyDate(new Date())};save();}
+ return state.studyPlan.start;
+}
+function planDay(date){return Math.round((Date.parse(date)-Date.parse(planStart()))/86400000);}
+function planTasks(date){
+ const offset=planDay(date);if(offset<0||offset>=21)return null;
+ const week=Math.floor(offset/7),day=offset%7;
+ return {week,chapters:Array.from({length:Math.ceil((day+1)*22/7)-Math.ceil(day*22/7)},(_,i)=>Math.ceil(day*22/7)+i+1)};
+}
+function planEntries(){return state.history.map(record=>({record,day:studyDate(record.date)}));}
+function planCounts(date,entries=planEntries()){
+ const counts=Array.from({length:23},()=>({runs:0,wins:0})),start=planStart();
+ entries.forEach(({record:h,day:d})=>{if(d<start||d>date||h.level!==3||h.scope!=='full'||!counts[h.chapter])return;counts[h.chapter].runs++;if(h.score===100)counts[h.chapter].wins++;});
+ return counts;
+}
+function planMet(count,week){return week===0?count.runs>=3:count.wins>=(week===1?1:3);}
+function planDayStatus(date,entries=planEntries()){
+ const tasks=planTasks(date),counts=planCounts(date,entries),rows=entries.filter(e=>e.day===date).map(e=>e.record);
+ const reviews=rows.filter(h=>h.scope==='review'||h.scope==='card').length;
+ return {tasks,counts,rows,reviews,done:tasks?tasks.chapters.filter(ch=>planMet(counts[ch],tasks.week)).length:0};
+}
+function renderPlan(){
+ const today=studyDate(new Date()),start=planStart(),offset=planDay(today),counts=planCounts(today),tasks=planTasks(today);
+ const current=tasks?tasks.week+1:offset<0?'시작 전':'종료';
+ $('#goalPlan').innerHTML=`<div class="plan-heading"><div><h3>3주 학습 플랜</h3><p class="muted">${start} ~ ${addStudyDays(start,20)}</p></div><label class="tiny">시작일 <input id="planStartDate" type="date" value="${start}" min="2000-01-01" max="2099-12-31"></label></div><p class="tiny muted">각 주 목표는 1~22장 전체가 대상이에요. 시작일부터 제출한 3단계 장 전체 시험을 누적해서 계산해요.</p><div class="plan-weeks">${PLAN_LABELS.map((label,w)=>{
+ const done=Array.from({length:22},(_,i)=>i+1).filter(ch=>planMet(counts[ch],w)).length;
+ return `<div class="plan-week ${tasks?.week===w?'current':''}"><b>${w+1}주차 · ${label}</b><div class="tiny muted">${addStudyDays(start,w*7)} ~ ${addStudyDays(start,w*7+6)}</div><strong>${done} / 22장</strong><div class="progress"><div style="width:${done/22*100}%"></div></div></div>`;
+ }).join('')}</div><div class="plan-today"><b>${tasks?`오늘은 ${current}주차 · ${tasks.chapters.join('·')}장`:`${offset<0?'플랜 시작 전이에요.':'3주 플랜이 끝났어요.'}`}</b><p>${tasks?PLAN_LABELS[tasks.week]+'에 도전해요. 매일 달성했는지는 아래 달력에서 확인하세요.':'달력에서 날짜별 목표와 기록을 확인하세요.'}</p><p class="tiny muted">마스터 = 3단계 장 전체 100점 3회. 복습은 오답 다시 풀기 또는 랜덤카드 제출로 기록해요.</p></div>`;
+ // Keep plan settings separate from learning records; moving the start date never deletes submissions.
+ $('#planStartDate').onchange=e=>{if(!e.target.value||!e.target.checkValidity())return;state.studyPlan={start:e.target.value};save();renderStats();};
+}
+function moveCalendar(delta){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=new Date(Date.UTC(y,m-1+delta,1)).toISOString().slice(0,7);calendarSelected=calendarMonth+'-01';renderCalendar();}
+function renderCalendar(){
+ const today=studyDate(new Date()),[year,month]=calendarMonth.split('-').map(Number),first=new Date(Date.UTC(year,month-1,1)).getUTCDay(),days=new Date(Date.UTC(year,month,0)).getUTCDate();
+ const entries=planEntries();
+ let cells=Array.from({length:first},()=>'<div aria-hidden="true"></div>').join('');
+ for(let n=1;n<=days;n++){
+ const date=calendarMonth+'-'+String(n).padStart(2,'0'),s=planDayStatus(date,entries),future=date>today;
+ const goal=!s.tasks?'계획 밖':future?'목표 예정':s.done===s.tasks.chapters.length?'목표 ✓':date===today?'목표 진행':'목표 미달';
+ const review=s.reviews?'복습 ✓':'복습 —',shortGoal=goal.replace('목표 미달','미달').replace('목표 진행','진행').replace('목표 예정','예정');
+ cells+=`<button class="cal-day ${date===today?'today':''} ${date<today&&s.tasks&&s.done<s.tasks.chapters.length?'missed':''} ${!future&&s.tasks&&s.done===s.tasks.chapters.length?'achieved':''}" data-date="${date}" aria-pressed="${date===calendarSelected}" ${date===today?'aria-current="date"':''} aria-label="${date} · ${goal} · ${review} · ${s.rows.length}회 제출"><b>${n}</b><span class="cal-goal">${shortGoal}</span><span class="${s.reviews?'review-done':''}">${review}</span><small>${s.rows.length?s.rows.length+'회':'—'}</small></button>`;
+ }
+ $('#studyCalendar').innerHTML=`<div class="calendar-heading"><h3 id="calendarTitle">${year}년 ${month}월</h3><div class="row"><button class="btn ghost" id="calendarPrev" aria-label="이전 달">‹</button><button class="btn ghost" id="calendarToday">오늘</button><button class="btn ghost" id="calendarNext" aria-label="다음 달">›</button></div></div><p class="tiny muted">목표 ✓는 그날까지 배정된 장의 목표를 모두 달성했다는 뜻이에요. 복습 ✓는 오답이나 랜덤카드를 제출한 날이에요. 날짜를 누르면 자세히 볼 수 있어요.</p><div class="calendar-grid" aria-labelledby="calendarTitle">${['일','월','화','수','목','금','토'].map(d=>'<div class="calendar-weekday">'+d+'</div>').join('')}${cells}</div><div id="calendarDetail" class="calendar-detail" aria-live="polite"></div>`;
+ $('#calendarPrev').onclick=()=>moveCalendar(-1);$('#calendarNext').onclick=()=>moveCalendar(1);$('#calendarToday').onclick=()=>{calendarMonth=today.slice(0,7);calendarSelected=today;renderCalendar();};
+ $$('#studyCalendar [data-date]').forEach(b=>b.onclick=()=>{calendarSelected=b.dataset.date;renderCalendar();});
+ renderCalendarDetail(entries);
+}
+function renderCalendarDetail(entries=planEntries()){
+ const date=calendarSelected,s=planDayStatus(date,entries),future=date>studyDate(new Date());
+ $('#calendarDetail').innerHTML=`<b>${date} · ${s.tasks?s.tasks.week+1+'주차':'계획 밖'}</b>${s.tasks?`<p>${PLAN_LABELS[s.tasks.week]} · ${future?'예정':s.done+' / '+s.tasks.chapters.length+'장 달성'}</p><div class="plan-chapters">${s.tasks.chapters.map(ch=>{const c=s.counts[ch],met=!future&&planMet(c,s.tasks.week),value=s.tasks.week===0?c.runs:c.wins,target=s.tasks.week===1?1:3;return `<span class="badge ${met?'task-done':''}">${ch}장 ${future?'예정':Math.min(value,target)+'/'+target+(met?' ✓':'')}</span>`;}).join('')}</div>`:'<p>3주 플랜에 포함되지 않는 날짜예요. 학습·복습 기록은 확인할 수 있어요.</p>'}<p>학습 ${s.rows.length}회 · 복습 ${s.reviews}회${s.reviews?' ✓':''}</p><p class="tiny muted">${future?'미래 날짜의 달성 여부는 미리 판정하지 않아요.':'해당 날짜까지의 누적 제출로 판정해요. 나중에 제출해도 과거의 미달 표시는 바뀌지 않아요.'}</p>`;
+}
+
 function renderStats(){
- const today=studyDate(new Date()),days=Math.max(0,Math.floor((Date.parse('2026-11-20')-Date.parse(today))/86400000)+1),pending=Array.from({length:22},(_,i)=>i+1).filter(c=>masterWins(c)<3),needed=pending.reduce((n,c)=>n+Math.max(0,3-masterWins(c)),0);
- $('#goalPlan').innerHTML='<h3>11월 20일 · 22장 완성</h3><b>'+(22-pending.length)+'/22장 MASTER · 남은 '+days+'일</b><p>'+(pending.length?(days?'하루 약 '+Math.ceil(pending.length/days)+'장씩 집중하고, 장 전체 시험에서 하루 '+Math.ceil(needed/days)+'회 100점을 목표로 해 보세요.':'목표일이 지났어요. 남은 장을 확인하고 다음 목표를 정해 보세요.'):'22장을 모두 완성했어요. 간격을 두고 복습하세요.')+'</p><p>오늘은 '+(pending.slice(0,Math.max(1,days?Math.ceil(pending.length/days):1)).join('·')||'복습')+(pending.length?'장부터 시작해요. 읽기 → 가리고 쓰기 → 오답 확인, 다음 날 다시 확인해요.':'에 도전해요.')+'</p><p class="tiny muted">MASTER · 3단계 장 전체 100점 3회</p>'+todayEncouragement();
+ renderPlan();renderCalendar();
  const groups={};state.history.forEach(h=>(groups[studyDate(h.date)]??=[]).push(h));
  $('#dailyStudy').innerHTML=Object.keys(groups).sort().reverse().map(d=>{const r=groups[d];return '<details><summary>'+d+' · '+r.length+'회 · '+new Set(r.map(h=>h.chapter)).size+'개 장</summary>'+[1,2,3].map(l=>{const v=r.filter(h=>h.level===l);return '<p>'+l+'단계 '+v.length+'회'+(v.length?' · 평균 '+Math.round(v.reduce((n,h)=>n+h.score,0)/v.length)+'점':'')+'</p>'}).join('')+'<p>학습한 장: '+[...new Set(r.map(h=>h.chapter))].sort((a,b)=>a-b).join(', ')+'</p></details>'}).join('')||'<p>첫 제출 후 학습 기록이 보여요.</p>';
  $('#chapterScores').innerHTML=Array.from({length:22},(_,i)=>{const c=i+1,r=fullRuns(c),wins=masterWins(c);return '<button class="score-tile" aria-pressed="'+(c===statsChapter)+'" onclick="statsChapter='+c+';renderStats()"><b>'+c+'장</b><span>'+(r.length?Math.max(...r.map(h=>h.score))+'점':'—')+'</span><small>'+(wins>=3?'MASTER':'100점 '+wins+'/3')+'</small></button>'}).join('');
