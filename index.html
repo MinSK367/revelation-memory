@@ -44,6 +44,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
 .cal-day b{font-size:16px}.cal-day .cal-goal{white-space:nowrap}.cal-day.missed .cal-goal{color:var(--bad)}.cal-day small{font-size:10px;color:var(--muted)}.cal-day.today b{background:var(--accent);color:white;border-radius:50%;min-width:24px;line-height:24px}.cal-day.achieved{background:#eef9f2;border-color:#b9dfc7}.cal-day.achieved .cal-goal,.review-done{color:var(--ok);font-weight:800}.cal-day[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}.cal-day:focus-visible{outline:3px solid var(--accent)}
 .calendar-detail{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}.calendar-detail p{margin:10px 0}.plan-chapters{display:flex;flex-wrap:wrap;gap:6px}.plan-chapters .task-done{background:#e8f6ed;color:var(--ok)}
 @media(max-width:600px){.plan-weeks{grid-template-columns:1fr}.plan-week{display:grid;grid-template-columns:1fr auto;gap:6px 12px}.plan-week strong{grid-column:2;grid-row:1 / 3;font-size:20px;margin:0}.plan-week .tiny{margin-top:0}.plan-week .progress{grid-column:1 / -1}.calendar-grid{gap:3px}.cal-day{padding:6px 1px;font-size:10px;border-radius:7px;min-height:94px}.calendar-heading .btn{padding:8px 12px}.calendar-heading h3{font-size:18px}}
+.correct-answer{margin-top:10px;padding:10px 12px;background:#f8f1e7;border-radius:10px;font-size:16px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}.correct-answer b{display:block;font-size:12px;color:var(--accent)}.verse-input-wrap>.correct-answer{grid-column:2}
 </style>
 </head>
 <body>
@@ -138,6 +139,12 @@ function showGradedInput(input,expected){
   if(d.hasMissing)result.title='빠진 글자가 있어요. 빠진 위치 옆 글자를 빨간색으로 표시했어요.';
   input.replaceWith(result);
 }
+function showCorrectAnswer(container,expected){
+ const answer=document.createElement('div');answer.className='correct-answer';
+ const label=document.createElement('b');label.textContent='정답';
+ const text=document.createElement('div');text.textContent=expected;
+ answer.append(label,text);container.append(answer);
+}
 function verseEntries(ch=chapter){return Object.entries(state.verses).filter(([k])=>+k.split(':')[0]===ch).sort((a,b)=>+a[0].split(':')[1]-+b[0].split(':')[1]);}
 function parseText(txt){const out={};for(const raw of txt.split(/\n+/)){const line=raw.trim();if(!line)continue;let m=line.match(/^(?:계(?:시록)?\s*)?(\d{1,2})\s*[:장]\s*(\d{1,2})\s*(?:절)?\s*[.)-]?\s*(.+)$/);if(!m)m=line.match(/^(\d{1,2})\s+(\d{1,2})\s+(.+)$/);if(m){let ch=+m[1],v=+m[2];if(ch>=1&&ch<=22&&v>0)out[`${ch}:${v}`]=m[3].trim()}}return out}
 // 핵심구절 선정 규칙: 조사는 핵심성 계산에서 제외하고, 정답은 원문 표현 그대로 유지한다.
@@ -205,9 +212,10 @@ function renderL1(entries){const chapterEntries=entries;entries=targetEntries(en
 function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">한 절의 빈칸 두 곳을 모두 맞혀 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
 function gradeBlanks(lv){
  const inputs=$$('.blank[data-answer]');if(!inputs.length||$('#quizForm button[type="submit"]').disabled)return;
- const groups={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');showGradedInput(inp,expected);});
+ const groups={},cards={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);cards[k]=inp.closest('.card');(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');showGradedInput(inp,expected);});
  const keys=Object.keys(groups),wrongKeys=keys.filter(k=>groups[k].some(x=>!x.ok)),correctKeys=keys.filter(k=>!wrongKeys.includes(k)),details={};
  wrongKeys.forEach(k=>details[k]={parts:groups[k],mine:groups[k].map(x=>x.mine).join(' / '),expected:groups[k].map(x=>x.expected).join(' / '),mode:'blank'});
+ wrongKeys.forEach(k=>showCorrectAnswer(cards[k],state.verses[k]));
  $('#quizForm button[type="submit"]').disabled=true;
  const score=Math.round(correctKeys.length/keys.length*100);recordAttempt(lv,score,wrongKeys,details,correctKeys);showResult(score,wrongKeys.length,'',correctKeys.length,keys.length);
 }
@@ -230,7 +238,7 @@ function gradeFull(entries){
     if(inp)inp.readOnly=true;
     if(ok){correctKeys.push(k);state.mastery[k]=true;}
     else{wrongKeys.push(k);wrongDetails[k]={mine,expected:t,mode:'verse'};}
-    if(inp)showGradedInput(inp,t);
+    if(inp){const wrap=inp.parentElement;showGradedInput(inp,t);if(!ok)showCorrectAnswer(wrap,t);}
   });
   const score=Math.round((correctKeys.length/(entries.length||1))*100);
   recordAttempt(3,score,wrongKeys,wrongDetails,correctKeys);
