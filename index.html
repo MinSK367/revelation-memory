@@ -295,9 +295,13 @@ function studyDate(d){return new Date(d).toLocaleDateString('sv-SE',{timeZone:'A
 function fullRuns(ch,lv=3){return state.history.filter(h=>h.chapter===ch&&h.level===lv&&h.scope==='full').sort((a,b)=>new Date(a.date)-new Date(b.date));}
 function masterWins(ch){return fullRuns(ch).filter(h=>h.score===100).length;}
 let calendarMonth=studyDate(new Date()).slice(0,7),calendarSelected=studyDate(new Date());
+const DEFAULT_PLAN_START='2026-10-31';
 const PLAN_LABELS=['3단계 3회 제출','3단계 100점 1회','마스터 달성'];
 function planStart(){
- if(!/^\d{4}-\d{2}-\d{2}$/.test(state.studyPlan?.start||'')){state.studyPlan={start:studyDate(new Date())};save();}
+ const plan=state.studyPlan,today=studyDate(new Date());
+ // The first release used today's date automatically; move that default to the agreed deadline.
+ const oldDefault=plan&&!plan.source&&(plan.start==='2026-11-05'||plan.start===today);
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(plan?.start||'')||oldDefault){state.studyPlan={...plan,start:DEFAULT_PLAN_START,source:'default'};save();}
  return state.studyPlan.start;
 }
 function planDay(date){return Math.round((Date.parse(date)-Date.parse(planStart()))/86400000);}
@@ -326,7 +330,7 @@ function renderPlan(){
  return `<div class="plan-week ${tasks?.week===w?'current':''}"><b>${w+1}주차 · ${label}</b><div class="tiny muted">${addStudyDays(start,w*7)} ~ ${addStudyDays(start,w*7+6)}</div><strong>${done} / 22장</strong><div class="progress"><div style="width:${done/22*100}%"></div></div></div>`;
  }).join('')}</div><div class="plan-today"><b>${tasks?`오늘은 ${current}주차 · ${tasks.chapters.join('·')}장`:`${offset<0?'플랜 시작 전이에요.':'3주 플랜이 끝났어요.'}`}</b><p>${tasks?PLAN_LABELS[tasks.week]+'에 도전해요. 매일 달성했는지는 아래 달력에서 확인하세요.':'달력에서 날짜별 목표와 기록을 확인하세요.'}</p><p class="tiny muted">마스터 = 3단계 장 전체 100점 3회. 복습은 오답 다시 풀기 또는 랜덤카드 제출로 기록해요.</p></div>`;
  // Keep plan settings separate from learning records; moving the start date never deletes submissions.
- $('#planStartDate').onchange=e=>{if(!e.target.value||!e.target.checkValidity())return;state.studyPlan={start:e.target.value};save();renderStats();};
+ $('#planStartDate').onchange=e=>{if(!e.target.value||!e.target.checkValidity())return;state.studyPlan={start:e.target.value,source:'custom'};save();renderStats();};
 }
 function moveCalendar(delta){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=new Date(Date.UTC(y,m-1+delta,1)).toISOString().slice(0,7);calendarSelected=calendarMonth+'-01';renderCalendar();}
 function renderCalendar(){
