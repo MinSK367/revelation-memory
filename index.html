@@ -181,7 +181,8 @@ function phraseCandidates(text,level,entries){
 function bestPhraseSpan(text,level,entries){return phraseCandidates(text,level,entries)[0]||{start:0,end:Math.min(2,text.split(/\s+/).length)}}
 function twoPhraseSpans(text,entries){
   const words=text.split(/\s+/),cands=phraseCandidates(text,2,entries);
-  const apart=(a,b)=>a.end<=b.start||a.start>=b.end;
+  // End offsets are exclusive: leave at least one visible word between blanks.
+  const apart=(a,b)=>a.end+1<=b.start||b.end+1<=a.start;
   // Keep existing questions when possible; try a shorter candidate if the best spans the verse.
   for(const first of cands){
     const second=cands.find(c=>apart(first,c));
@@ -198,8 +199,8 @@ function twoPhraseSpans(text,entries){
     if(apart(first,second)&&first.score+second.score>best){pair=[first,second];best=first.score+second.score;}
   }
   if(pair)return pair.sort((a,b)=>a.start-b.start);
-  // Custom imported text shorter than four words still gets two distinct blanks where possible.
-  if(words.length>=2)return [{start:0,end:1},{start:1,end:words.length}];
+  // Short verses use single-word blanks so a visible word still separates them.
+  if(words.length>=3)return [{start:0,end:1},{start:words.length-1,end:words.length}];
   return [{start:0,end:words.length}];
 }
 function level1Span(text,entries){return bestPhraseSpan(text,1,entries)}
@@ -211,7 +212,7 @@ function renderStudy(){$$('.level').forEach(el=>el.classList.toggle('active',+el
 }
 function targetEntries(entries){if(!retryWrongOnly)return entries;return entries.filter(([k])=>retryKey?k===retryKey:(hasWrong(k,level)||(level===3&&wrongLevel===0&&hasWrong(k,0))))}
 function renderL1(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">빈칸에 들어갈 구절을 기억해서 써 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
-function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">한 절의 빈칸 두 곳을 모두 맞혀 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+function renderL2(entries){const chapterEntries=entries;entries=targetEntries(entries);let html='<div class="card">빈칸을 모두 맞혀 보세요. 두 빈칸 사이에는 본문 단어가 한 개 이상 보여요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
 function gradeBlanks(lv){
  const inputs=$$('.blank[data-answer]');if(!inputs.length||$('#quizForm button[type="submit"]').disabled)return;
  const groups={},cards={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);cards[k]=inp.closest('.card');(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');showGradedInput(inp,expected);});
