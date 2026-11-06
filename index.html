@@ -249,12 +249,12 @@ function gradeFull(entries){
   const wrongKeys=[],correctKeys=[],wrongDetails={};
   entries.forEach(([k,t])=>{
     const inp=$(`.verse-input[data-key="${k}"]`),mine=inp?inp.value:'';
-    const ok=isExact(mine,t);
+    const expected=blankAnswer(t),ok=isExact(mine,expected);
     inp?.classList.remove('correct','wrong');inp?.classList.add(ok?'correct':'wrong');
     if(inp)inp.readOnly=true;
     if(ok){correctKeys.push(k);state.mastery[k]=true;}
-    else{wrongKeys.push(k);wrongDetails[k]={mine,expected:t,mode:'verse'};}
-    if(inp){const wrap=inp.parentElement;showGradedInput(inp,t);if(!ok)showCorrectAnswer(wrap,t);}
+    else{wrongKeys.push(k);wrongDetails[k]={mine,expected,mode:'verse'};}
+    if(inp){const wrap=inp.parentElement;showGradedInput(inp,expected);if(!ok)showCorrectAnswer(wrap,expected);}
   });
   const score=Math.round((correctKeys.length/(entries.length||1))*100);
   recordAttempt(3,score,wrongKeys,wrongDetails,correctKeys);
