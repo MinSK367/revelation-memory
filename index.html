@@ -112,6 +112,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 function save(){localStorage.setItem(KEY,JSON.stringify(state));updateHeader();}
 function norm(s){return (s||'').replace(/[\s\n\r\t.,!?;:'"“”‘’·…()\[\]{}<>〈〉「」『』—_-]/g,'').toLowerCase();}
 function exactText(s){return (s||'').normalize('NFC').replace(/[\s\p{P}\p{S}]/gu,'').toLowerCase();}
+function blankAnswer(text){return text.replace(/[\p{P}\p{S}]/gu,char=>char==='.'||char===','?char:'').replace(/\s+/g,' ').trim();}
 function isExact(a,b){return exactText(a)===exactText(b);}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function gradeCharMap(s){const raw=String(s??'').normalize('NFC'),chars=[];[...raw].forEach((c,i)=>{if(!/[\s\p{P}\p{S}]/u.test(c))chars.push({c:c.toLowerCase(),rawIndex:i})});return {raw,chars};}
@@ -147,12 +148,12 @@ function showCorrectAnswer(container,expected,blanks=[]){
  const text=document.createElement('div');
  const words=[...expected.matchAll(/\S+/g)];
  let cursor=0;
- blanks.forEach(({start,expected:phrase})=>{
-  const first=words[start],last=words[start+phrase.split(/\s+/).length-1];
+ blanks.forEach(({start,end:wordEnd})=>{
+  const first=words[start],last=words[wordEnd-1];
   const end=last.index+last[0].length;
   const highlight=document.createElement('span');
   highlight.className='blank-answer';
-  highlight.textContent=expected.slice(first.index,end);
+  highlight.textContent=blankAnswer(expected.slice(first.index,end));
   text.append(expected.slice(cursor,first.index),highlight);
   cursor=end;
  });
@@ -223,14 +224,14 @@ function renderStudy(){$$('.level').forEach(el=>el.classList.toggle('active',+el
  if(level===1)renderL1(entries,chapterEntries); else if(level===2)renderL2(entries,chapterEntries); else renderL3(entries);
 }
 function targetEntries(entries){if(!retryWrongOnly)return entries;if(retryKeys)return entries.filter(([k])=>retryKeys.has(k));return entries.filter(([k])=>retryKey?k===retryKey:(hasWrong(k,level)||(level===3&&wrongLevel===0&&hasWrong(k,0))))}
-function renderL1(entries,chapterEntries){let html='<div class="card">빈칸에 들어갈 구절을 기억해서 써 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=w.slice(sp.start,sp.end).join(' '),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
-function renderL2(entries,chapterEntries){let html='<div class="card">빈칸을 모두 맞혀 보세요. 두 빈칸 사이에는 본문 단어가 한 개 이상 보여요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=w.slice(sp.start,sp.end).join(' ');row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+function renderL1(entries,chapterEntries){let html='<div class="card">빈칸에 들어갈 구절을 기억해서 써 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=blankAnswer(w.slice(sp.start,sp.end).join(' ')),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-end="${sp.end}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
+function renderL2(entries,chapterEntries){let html='<div class="card">빈칸을 모두 맞혀 보세요. 두 빈칸 사이에는 본문 단어가 한 개 이상 보여요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=blankAnswer(w.slice(sp.start,sp.end).join(' '));row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-end="${sp.end}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
 function gradeBlanks(lv){
  const inputs=$$('.blank[data-answer]');if(!inputs.length||$('#quizForm button[type="submit"]').disabled)return;
  const groups={},cards={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);cards[k]=inp.closest('.card');(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');showGradedInput(inp,expected);});
  const keys=Object.keys(groups),wrongKeys=keys.filter(k=>groups[k].some(x=>!x.ok)),correctKeys=keys.filter(k=>!wrongKeys.includes(k)),details={};
  wrongKeys.forEach(k=>details[k]={parts:groups[k],mine:groups[k].map(x=>x.mine).join(' / '),expected:groups[k].map(x=>x.expected).join(' / '),mode:'blank'});
- wrongKeys.forEach(k=>showCorrectAnswer(cards[k],state.verses[k],inputs.filter(inp=>inp.dataset.key===k).map(inp=>({start:+inp.dataset.start,expected:decodeURIComponent(inp.dataset.answer)}))));
+ wrongKeys.forEach(k=>showCorrectAnswer(cards[k],state.verses[k],inputs.filter(inp=>inp.dataset.key===k).map(inp=>({start:+inp.dataset.start,end:+inp.dataset.end}))));
  $('#quizForm button[type="submit"]').disabled=true;
  const score=Math.round(correctKeys.length/keys.length*100);recordAttempt(lv,score,wrongKeys,details,correctKeys);showResult(score,wrongKeys,'',correctKeys.length,keys.length);
 }
