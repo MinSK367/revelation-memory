@@ -85,7 +85,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
         <div id="studyArea"></div>
       </section>
       <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">다시 맞힌 오답은 목록에서 사라져요. 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><label for="wrongChapterFilter">장</label><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
-<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">한 번이라도 틀린 구절만 복습해요. 맞히면 다음 카드로!</p><div class="row"><label for="cardMode">복습 모드</label><select id="cardMode"><option value="all">기본 복습</option><option value="frequent">집중 복습 · 전 장 3회 이상 오답</option><option value="chapter">집중 복습 · 장별 오답</option></select><label id="cardChapterLabel" class="hidden" for="cardChapter">장 선택</label><select id="cardChapter" class="hidden" aria-label="장 선택"></select></div><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
+<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">3단계에서 틀린 구절을 복습해요.</p><div id="cardModes" class="row" role="group" aria-label="복습 모드"><button type="button" class="btn primary" data-mode="all" aria-pressed="true">기본 복습</button><button type="button" class="btn secondary" data-mode="frequent" aria-pressed="false">전 장 3회 이상 오답</button><button type="button" class="btn secondary" data-mode="chapter" aria-pressed="false">장별 오답</button></div><div class="row"><label id="cardChapterLabel" class="hidden" for="cardChapter">장 선택</label><select id="cardChapter" class="hidden" aria-label="장 선택"></select></div><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
     </main>
   </div>
 </div>
@@ -443,12 +443,23 @@ function cardPriority(k,today){
  return 5;
 }
 function shuffleCards(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-const cardMode=$('#cardMode'),cardChapter=$('#cardChapter');
+let cardMode='all';
+const cardModeButtons=$('#cardModes button'),cardChapter=$('#cardChapter');
 cardChapter.innerHTML=Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');
-cardMode.onchange=cardChapter.onchange=renderCards;
+cardChapter.onchange=renderCards;
+cardModeButtons.forEach(button=>button.onclick=()=>{
+ cardMode=button.dataset.mode;
+ cardModeButtons.forEach(option=>{
+  const selected=option===button;
+  option.setAttribute('aria-pressed',String(selected));
+  option.classList.toggle('primary',selected);
+  option.classList.toggle('secondary',!selected);
+ });
+ renderCards();
+});
 function cardWrongKeys(mode,selectedChapter){
  const counts=new Map();
- for(const {key,count} of Object.values(state.wrong)){
+ for(const {key,count} of Object.values(state.wrong).filter(record=>record.level===3)){
   if(count>=1&&Object.hasOwn(state.verses,key))counts.set(key,(counts.get(key)||0)+count);
  }
  return [...counts].filter(([key,count])=>{
@@ -478,7 +489,7 @@ function ensureCardDay(mode,selectedChapter,wrongKeys){
 }
 let cardTransition=false;
 function renderCards(){
- const mode=cardMode.value,selectedChapter=cardChapter.value;
+ const mode=cardMode,selectedChapter=cardChapter.value;
  cardChapter.classList.toggle('hidden',mode!=='chapter');
  $('#cardChapterLabel').classList.toggle('hidden',mode!=='chapter');
  const wrongKeys=new Set(cardWrongKeys(mode,selectedChapter));
