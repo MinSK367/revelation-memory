@@ -85,7 +85,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
         <div id="studyArea"></div>
       </section>
       <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">다시 맞힌 오답은 목록에서 사라져요. 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><label for="wrongChapterFilter">장</label><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
-<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">한 번이라도 틀린 구절만 복습해요. 맞히면 다음 카드로!</p><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
+<section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">한 번이라도 틀린 구절만 복습해요. 맞히면 다음 카드로!</p><div class="row"><label for="cardMode">복습 모드</label><select id="cardMode"><option value="all">기본 복습</option><option value="frequent">집중 복습 · 전 장 3회 이상 오답</option><option value="chapter">집중 복습 · 장별 오답</option></select><label id="cardChapterLabel" class="hidden" for="cardChapter">장 선택</label><select id="cardChapter" class="hidden" aria-label="장 선택"></select></div><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
     </main>
   </div>
 </div>
@@ -443,17 +443,30 @@ function cardPriority(k,today){
  return 5;
 }
 function shuffleCards(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function cardWrongKeys(){
- return [...new Set(Object.values(state.wrong).filter(w=>w.count>=1&&Object.hasOwn(state.verses,w.key)).map(w=>w.key))];
+const cardMode=$('#cardMode'),cardChapter=$('#cardChapter');
+cardChapter.innerHTML=Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');
+cardMode.onchange=cardChapter.onchange=renderCards;
+function cardWrongKeys(mode,selectedChapter){
+ const counts=new Map();
+ for(const {key,count} of Object.values(state.wrong)){
+  if(count>=1&&Object.hasOwn(state.verses,key))counts.set(key,(counts.get(key)||0)+count);
+ }
+ return [...counts].filter(([key,count])=>{
+  if(mode==='frequent')return count>=3;
+  if(mode==='chapter')return key.split(':')[0]===selectedChapter;
+  return true;
+ }).map(([key])=>key);
 }
-function ensureCardDay(){
- const today=studyDate(new Date()),wrongKeys=new Set(cardWrongKeys()),activeKeys=new Set(activeWrong().map(w=>w.key));
+function ensureCardDay(mode,selectedChapter,wrongKeys){
+ const today=studyDate(new Date()),activeKeys=new Set(activeWrong().map(w=>w.key));
  state.reviewSchedule??={};
  // Only previously missed verses can enter the review queue, including resolved records.
  [...wrongKeys].filter(k=>state.mastery[k]&&!state.reviewSchedule[k]).forEach(k=>state.reviewSchedule[k]={step:0,due:today});
- const eligible=k=>{const r=state.reviewSchedule[k];return wrongKeys.has(k)&&(day.repeat||r?.lastCorrect!==today&&!(r?.due>today&&!activeKeys.has(k)));};
- if(state.cardDay?.date!==today)state.cardDay={date:today,keys:[],done:[],attempts:0};
- const day=state.cardDay;
+ const eligible=k=>{const r=state.reviewSchedule[k];return wrongKeys.has(k)&&(mode!=='all'||day.repeat||r?.lastCorrect!==today&&!(r?.due>today&&!activeKeys.has(k)));};
+ const queues=mode==='all'?state:(state.cardFocusDays??={});
+ const queueKey=mode==='chapter'?`chapter-${selectedChapter}`:mode==='frequent'?'frequent':'cardDay';
+ if(queues[queueKey]?.date!==today)queues[queueKey]={date:today,keys:[],done:[],attempts:0};
+ const day=queues[queueKey];
  // Reconcile already saved daily cards so the rule applies immediately after an update.
  day.keys=day.keys.filter(k=>wrongKeys.has(k)&&(day.done.includes(k)||eligible(k)));
  day.done=day.done.filter(k=>day.keys.includes(k));
@@ -461,26 +474,33 @@ function ensureCardDay(){
  [...wrongKeys].filter(k=>eligible(k)&&!day.keys.includes(k)).forEach(k=>groups[cardPriority(k,today)].push(k));
  day.keys.push(...groups.flatMap(shuffleCards));
  save();
+ return day;
 }
 let cardTransition=false;
 function renderCards(){
- ensureCardDay();cardTransition=false;const day=state.cardDay,k=day.keys.find(k=>!day.done.includes(k));
- if(!k){const hasWrong=cardWrongKeys().length>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'아직 틀린 구절이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.repeat=true;day.keys=[];day.done=[];renderCards();};return;}
+ const mode=cardMode.value,selectedChapter=cardChapter.value;
+ cardChapter.classList.toggle('hidden',mode!=='chapter');
+ $('#cardChapterLabel').classList.toggle('hidden',mode!=='chapter');
+ const wrongKeys=new Set(cardWrongKeys(mode,selectedChapter));
+ const day=ensureCardDay(mode,selectedChapter,wrongKeys),k=day.keys.find(k=>!day.done.includes(k));
+ cardTransition=false;
+ if(!k){const hasWrong=wrongKeys.size>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.repeat=true;day.keys=[];day.done=[];renderCards();};return;}
  const [ch,v]=k.split(':'),reason=['밀린 복습','중요 성구','오늘 복습','오답 복습','기억 확인','새 구절'][cardPriority(k,day.date)];
  $('#cardArea').innerHTML='<div class="row"><span class="badge">'+day.done.length+' / '+day.keys.length+'절 완료</span><span class="muted">3단계 · '+reason+'</span></div><div class="card flashcard"><h3>요한계시록 '+ch+'장 '+v+'절</h3><form id="cardForm"><label for="cardAnswer">이 절을 처음부터 끝까지 써 보세요.</label><textarea id="cardAnswer" rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary" type="submit">정답 확인</button></form><div id="cardFeedback" aria-live="polite"></div></div>';
- $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k);};
+ $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k,day);};
 }
-function gradeCard(k){
- if(cardTransition||state.cardDay.date!==studyDate(new Date())){if(!cardTransition)renderCards();return;}
+function gradeCard(k,day){
+ if(cardTransition||day.date!==studyDate(new Date())){if(!cardTransition)renderCards();return;}
  const input=$('#cardAnswer'),mine=input.value,expected=state.verses[k];if(!mine.trim()){input.focus();return;}
  cardTransition=true;const ok=isExact(mine,expected),oldChapter=chapter;chapter=+k.split(':')[0];
- state.cardDay.attempts++;
- if(ok){state.mastery[k]=true;state.cardDay.done.push(k);}
+ day.attempts++;
+ if(ok){state.mastery[k]=true;day.done.push(k);}
  recordAttempt(3,ok?100:0,ok?[]:[k],ok?{}:{[k]:{mine,expected,mode:'verse'}},ok?[k]:[],'card');
  chapter=oldChapter;input.readOnly=true;$('#cardForm button').disabled=true;
  if(ok){
  $('#cardFeedback').innerHTML='<p class="exact-ok">정답! 다음 카드로 넘어가요.</p>';
- setTimeout(()=>{if(!$('#cardsView').classList.contains('hidden')){renderCards();$('#cardAnswer')?.focus();}else cardTransition=false;},700);
+ const form=$('#cardForm');
+ setTimeout(()=>{if($('#cardForm')!==form)return;if(!$('#cardsView').classList.contains('hidden')){renderCards();$('#cardAnswer')?.focus();}else cardTransition=false;},700);
  }else{
  const d=diffMarked(expected,mine);$('#cardFeedback').innerHTML='<div class="inline-diff"><b>정답</b><div>'+d.expected+'</div><b>내 답</b><div>'+d.mine+'</div></div><button class="btn secondary" id="cardRetry">가리고 다시 쓰기</button>';
  $('#cardRetry').onclick=()=>{renderCards();$('#cardAnswer').focus();};
