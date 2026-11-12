@@ -328,10 +328,9 @@ let calendarMonth=studyDate(new Date()).slice(0,7),calendarSelected=studyDate(ne
 const DEFAULT_PLAN_START='2026-10-31';
 const PLAN_LABELS=['3단계 3회 제출','3단계 100점 1회','마스터 달성'];
 function planStart(){
- const plan=state.studyPlan,today=studyDate(new Date());
- // The first release used today's date automatically; move that default to the agreed deadline.
- const oldDefault=plan&&!plan.source&&(plan.start==='2026-11-05'||plan.start===today);
- if(!/^\d{4}-\d{2}-\d{2}$/.test(plan?.start||'')||oldDefault){state.studyPlan={...plan,start:DEFAULT_PLAN_START,source:'default'};save();}
+ const plan=state.studyPlan;
+ // Preserve saved dates and records; supply a default only when a date is missing.
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(plan?.start||'')||!Number.isFinite(Date.parse(plan.start))){state.studyPlan={...plan,start:DEFAULT_PLAN_START,source:'default'};save();}
  return state.studyPlan.start;
 }
 function planDay(date){return Math.round((Date.parse(date)-Date.parse(planStart()))/86400000);}
@@ -339,7 +338,8 @@ function planTasks(date){
  const offset=planDay(date);if(offset<0||offset>=21)return null;
  const week=Math.floor(offset/7),day=offset%7;
  const chosen=state.studyPlan?.chaptersByDate?.[date];
- if(Array.isArray(chosen)&&chosen.length)return {week,chapters:chosen.filter(ch=>Number.isInteger(ch)&&ch>=1&&ch<=22),custom:true};
+ const selected=Array.isArray(chosen)?[...new Set(chosen.filter(ch=>Number.isInteger(ch)&&ch>=1&&ch<=22))]:[];
+ if(selected.length)return {week,chapters:selected,custom:true};
  return {week,chapters:Array.from({length:Math.ceil((day+1)*22/7)-Math.ceil(day*22/7)},(_,i)=>Math.ceil(day*22/7)+i+1)};
 }
 function planEntries(){return state.history.map(record=>({record,day:studyDate(record.date)}));}
@@ -368,12 +368,14 @@ function renderPlan(){
 
 function renderPlanChapterPicker(date){
  let area=$('#planChapterPicker');if(!area){area=document.createElement('div');area.id='planChapterPicker';$('#goalPlan').appendChild(area);}
- const tasks=planTasks(date),start=planStart();
+ const start=planStart(),end=addStudyDays(start,20);
+ date=date<start?start:date>end?end:date;
+ const tasks=planTasks(date);
  area.innerHTML='<div class="row"><b>공부할 장 고르기</b><input type="date" id="chapterPlanDate" aria-label="학습할 날짜" min="'+start+'" max="'+addStudyDays(start,20)+'" value="'+date+'"></div>'+(tasks?'<form id="chapterPlanForm"><div class="plan-chapter-options">'+Array.from({length:22},(_,i)=>i+1).map(ch=>'<label><input type="checkbox" name="planChapter" value="'+ch+'" '+(tasks.chapters.includes(ch)?'checked':'')+'><span>'+ch+'장</span></label>').join('')+'</div><div class="row"><button class="btn primary" type="submit">선택 저장</button><span class="tiny muted" id="chapterPlanMessage" role="status"></span></div></form><div class="row" style="margin-top:12px">'+tasks.chapters.map(ch=>'<button class="btn ghost" onclick="startPlannedChapter('+ch+')">'+ch+'장 공부하기</button>').join('')+'</div>':'<p class="muted">플랜 기간 안의 날짜를 골라 주세요.</p>');
  $('#chapterPlanDate').onchange=e=>{if(e.target.value&&e.target.checkValidity())renderPlanChapterPicker(e.target.value);};
  if(tasks)$('#chapterPlanForm').onsubmit=e=>{e.preventDefault();const selected=$$('#chapterPlanForm input:checked').map(el=>+el.value);if(!selected.length){$('#chapterPlanMessage').textContent='한 장 이상 골라 주세요.';return;}state.studyPlan.chaptersByDate??={};state.studyPlan.chaptersByDate[date]=selected;save();renderPlan();renderPlanChapterPicker(date);renderCalendar();$('#chapterPlanMessage').textContent='저장했어요.';};
 }
-function startPlannedChapter(ch){chapter=ch;level=3;retryWrongOnly=false;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});}
+function startPlannedChapter(ch){chapter=ch;level=3;retryWrongOnly=false;retryKeys=null;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});}
 
 function moveCalendar(delta){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=new Date(Date.UTC(y,m-1+delta,1)).toISOString().slice(0,7);calendarSelected=calendarMonth+'-01';renderCalendar();}
 function renderCalendar(){
