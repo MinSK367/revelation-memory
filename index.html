@@ -428,17 +428,24 @@ function renderDailyStudy(){
   if(entry.scope==='card'||entry.chapter!==statsChapter||![1,2,3].includes(entry.level))continue;
   const date=studyDate(entry.date);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
-  if(!days.has(date))days.set(date,[0,0,0]);
+  if(!days.has(date))days.set(date,[0,0,0,0]);
   days.get(date)[entry.level-1]++;
   total++;
+ }
+ for(const round of state.chapterCardRounds||[]){
+  if(round.chapter!==statsChapter)continue;
+  const date=studyDate(round.date);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+  if(!days.has(date))days.set(date,[0,0,0,0]);
+  days.get(date)[3]++;
  }
  const rows=[...days].sort(([a],[b])=>b.localeCompare(a));
  $('#dailyStudyTitle').textContent='날짜별 학습 · '+statsChapter+'장';
  $('#dailyStudySummary').textContent=rows.length
-  ? '마지막 학습 '+rows[0][0]+' · '+rows.length+'일 · 총 '+total+'회 제출'
+  ? '마지막 학습 '+rows[0][0]+' · '+rows.length+'일 · 총 '+total+'회 제출 · 복습 '+rows.reduce((sum,[,counts])=>sum+counts[3],0)+'회차'
   : '옆의 장 선택에서 다른 장을 볼 수 있어요.';
  $('#dailyStudy').innerHTML=rows.length
-  ? '<table class="study-log" aria-labelledby="dailyStudyTitle"><thead><tr><th scope="col">날짜</th><th scope="col">1단계</th><th scope="col">2단계</th><th scope="col">3단계</th></tr></thead><tbody>'
+  ? '<table class="study-log" aria-labelledby="dailyStudyTitle"><thead><tr><th scope="col">날짜</th><th scope="col">1단계</th><th scope="col">2단계</th><th scope="col">3단계</th><th scope="col">카드 복습</th></tr></thead><tbody>'
     +rows.map(([date,counts])=>'<tr><th scope="row">'+date+'</th>'+counts.map(n=>n?'<td>'+n+'회</td>':'<td data-empty>0회</td>').join('')+'</tr>').join('')
     +'</tbody></table>'
   : '<p class="muted">이 장의 학습 기록이 아직 없어요.</p>';
@@ -540,17 +547,24 @@ function renderCards(){
  const wrongKeys=new Set(cardWrongKeys(mode,selectedChapter));
  const day=ensureCardDay(mode,selectedChapter,wrongKeys),k=day.keys.find(k=>!day.done.includes(k));
  cardTransition=false;
- if(!k){const hasWrong=wrongKeys.size>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.repeat=true;day.keys=[];day.done=[];renderCards();};return;}
+ if(!k){const hasWrong=wrongKeys.size>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.repeat=true;day.keys=[];day.done=[];day.attempts=0;day.roundRecorded=false;renderCards();};return;}
  const [ch,v]=k.split(':'),reason=['밀린 복습','중요 성구','오늘 복습','오답 복습','기억 확인','새 구절'][cardPriority(k,day.date)];
  $('#cardArea').innerHTML='<div class="row"><span class="badge">'+day.done.length+' / '+day.keys.length+'절 완료</span><span class="muted">3단계 · '+reason+'</span></div><div class="card flashcard"><h3>요한계시록 '+ch+'장 '+v+'절</h3><form id="cardForm"><label for="cardAnswer">이 절을 처음부터 끝까지 써 보세요.</label><textarea id="cardAnswer" rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary" type="submit">정답 확인</button></form><div id="cardFeedback" aria-live="polite"></div></div>';
- $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k,day);};
+ $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k,day,mode);};
 }
-function gradeCard(k,day){
+function gradeCard(k,day,mode){
  if(cardTransition||day.date!==studyDate(new Date())){if(!cardTransition)renderCards();return;}
  const input=$('#cardAnswer'),mine=input.value,expected=state.verses[k];if(!mine.trim()){input.focus();return;}
  cardTransition=true;const ok=isExact(mine,expected),oldChapter=chapter;chapter=+k.split(':')[0];
  day.attempts++;
- if(ok){state.mastery[k]=true;day.done.push(k);}
+ if(ok){
+  state.mastery[k]=true;
+  day.done.push(k);
+  if(mode==='chapter'&&!day.roundRecorded&&day.keys.length&&day.keys.every(key=>day.done.includes(key))){
+   (state.chapterCardRounds??=[]).push({chapter,date:new Date().toISOString()});
+   day.roundRecorded=true;
+  }
+ }
  recordAttempt(3,ok?100:0,ok?[]:[k],ok?{}:{[k]:{mine,expected,mode:'verse'}},ok?[k]:[],'card');
  chapter=oldChapter;input.readOnly=true;$('#cardForm button').disabled=true;
  if(ok){
