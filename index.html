@@ -421,7 +421,26 @@ function renderCalendarDetail(entries=planEntries()){
  $('#calendarDetail').innerHTML=`<b>${date} · ${s.tasks?s.tasks.week+1+'주차':'계획 밖'}</b>${s.tasks?`<p>${PLAN_LABELS[s.tasks.week]} · ${future?'예정':s.done+' / '+s.tasks.chapters.length+'장 달성'}</p><div class="plan-chapters">${s.tasks.chapters.map(ch=>{const c=s.counts[ch],met=!future&&planMet(c,s.tasks.week),value=s.tasks.week===0?c.runs:c.wins,target=s.tasks.week===1?1:3;return `<span class="badge ${met?'task-done':''}">${ch}장 ${future?'예정':Math.min(value,target)+'/'+target+(met?' ✓':'')}</span>`;}).join('')}</div>`:'<p>3주 플랜에 포함되지 않는 날짜예요. 학습·복습 기록은 확인할 수 있어요.</p>'}<p>학습 ${s.rows.length}회 · 복습 ${s.reviews}회${s.reviews?' ✓':''}</p><p class="tiny muted">${future?'미래 날짜의 달성 여부는 미리 판정하지 않아요.':'해당 날짜까지의 누적 제출로 판정해요. 나중에 제출해도 과거의 미달 표시는 바뀌지 않아요.'}</p>`;
 }
 
+function recoverChapterCardRounds(){
+ let changed=false;
+ for(const [key,queue] of Object.entries(state.cardFocusDays||{})){
+  const match=/^chapter-([1-9]|1\d|2[0-2])$/.exec(key);
+  if(!match||!queue||queue.roundRecorded!==undefined)continue;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(queue.date)||studyDate(queue.date)!==queue.date)continue;
+  if(!Array.isArray(queue.keys)||!queue.keys.length||!Array.isArray(queue.done)||!(queue.attempts>=queue.keys.length))continue;
+  const chapter=Number(match[1]),done=new Set(queue.done);
+  if(!queue.keys.every(verse=>typeof verse==='string'&&verse.startsWith(chapter+':')&&done.has(verse)))continue;
+  const rounds=state.chapterCardRounds??=[];
+  if(!rounds.some(round=>round.chapter===chapter&&studyDate(round.date)===queue.date)){
+   rounds.push({chapter,date:queue.date});
+  }
+  queue.roundRecorded=true;
+  changed=true;
+ }
+ if(changed)save();
+}
 function renderDailyStudy(){
+ recoverChapterCardRounds();
  const days=new Map();
  let total=0;
  for(const entry of state.history){
