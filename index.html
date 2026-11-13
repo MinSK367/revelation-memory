@@ -9,7 +9,7 @@
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:linear-gradient(180deg,#efe9df,#f7f4ee 45%,#f4f1ea);color:var(--ink)}
 button,input,textarea,select{font:inherit}.app{max-width:1180px;margin:auto;padding:24px}.hero{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}.hero h1{margin:0;font-size:clamp(28px,4vw,46px);letter-spacing:-.04em}.hero p{margin:8px 0 0;color:var(--muted)}
 .grid{display:grid;grid-template-columns:280px 1fr;gap:20px}.panel{background:rgba(255,253,248,.94);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}.side{padding:18px;position:sticky;top:18px;height:fit-content}.main{padding:24px;min-height:680px}
-.brand{font-weight:800;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}.chapter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.chbtn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px;cursor:pointer}.chbtn.active{background:var(--accent);color:white;border-color:var(--accent)}.chbtn.done{outline:2px solid #bfd8ca}.section-title{font-weight:800;margin:22px 0 10px}.navbtn{width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:12px;cursor:pointer}.navbtn.active,.navbtn:hover{background:#eee7dc}
+.brand{font-weight:800;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em}.chapter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.chbtn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px;cursor:pointer}.chbtn.active{background:var(--accent);color:white;border-color:var(--accent)}.chbtn[data-progress]{outline:2px solid var(--chapter-progress)}.chbtn[data-progress='1']{--chapter-progress:#86b943}.chbtn[data-progress='2']{--chapter-progress:#367bd3}.chbtn[data-progress='3']{--chapter-progress:#d84a4a}.chbtn[data-progress='master']{--chapter-progress:#d4a629}.chbtn:focus-visible{outline-offset:2px}.chapter-legend{display:flex;flex-wrap:wrap;gap:4px 10px;margin:8px 0 0}.chapter-legend span::before{content:'';display:inline-block;width:7px;height:7px;border:2px solid var(--legend);border-radius:50%;margin-right:4px}.section-title{font-weight:800;margin:22px 0 10px}.navbtn{width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:12px;cursor:pointer}.navbtn.active,.navbtn:hover{background:#eee7dc}
 .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}.level{border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;background:#fff}.level.active{border-color:var(--accent2);box-shadow:0 0 0 2px rgba(156,123,91,.16)}.level strong{display:block}.level span{font-size:13px;color:var(--muted)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.badge{padding:6px 10px;border-radius:999px;background:#eee7dc;color:var(--accent);font-size:13px;font-weight:700}.score{font-size:46px;font-weight:900;letter-spacing:-.04em}.score small{font-size:18px;color:var(--muted)}
 .card{border:1px solid var(--line);background:#fff;border-radius:18px;padding:18px;margin:14px 0}.verse{line-height:1.95;font-size:18px}.verse-no{display:inline-block;min-width:28px;color:var(--accent2);font-weight:800}.blank{border:0;border-bottom:2px solid #bcae9d;background:#faf7f1;padding:3px 6px;min-width:100px}.blank.bad{border-bottom-color:var(--bad);background:#fff0ed}.blank.good{border-bottom-color:var(--ok);background:#eef9f2}.answer{font-size:13px;color:var(--bad);margin-left:6px}
@@ -60,7 +60,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
       <button class="navbtn" data-view="wrong">📕 오답 노트</button>
       <button class="navbtn" data-view="stats">📊 진도·수준</button>
       <button class="navbtn" data-view="data">⚙️ 본문 관리</button>
-      <details class="chapter-picker"><summary>장 선택</summary><div class="chapter-grid" id="chapterGrid"></div></details>
+      <details class="chapter-picker"><summary>장 선택</summary><div class="chapter-grid" id="chapterGrid"></div><p class="chapter-legend tiny muted"><span style="--legend:#86b943">1단계</span><span style="--legend:#367bd3">2단계</span><span style="--legend:#d84a4a">3단계</span><span style="--legend:#d4a629">MASTER</span></p></details>
       <div class="section-title">현재 장 진도</div><div class="progress"><div id="chapterProgress"></div></div><div class="tiny muted" id="chapterProgressText" style="margin-top:7px">본문 내장 완료 · 바로 학습 가능</div>
     </aside>
     <main class="panel main">
@@ -84,7 +84,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
         </div>
         <div id="studyArea"></div>
       </section>
-      <section id="wrongView" class="hidden"><h2>오답 노트</h2><p class="muted">다시 맞힌 오답은 목록에서 사라져요. 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><label for="wrongChapterFilter">장</label><select id="wrongChapterFilter"></select><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
+      <section id="wrongView" class="hidden"><h2>오답 노트 <span class="muted" id="wrongChapterTitle"></span></h2><p class="muted">다시 맞힌 오답은 목록에서 사라져요. 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
 <section id="cardsView" class="hidden"><h2>랜덤카드</h2><p class="muted">3단계에서 틀린 구절을 복습해요.</p><div id="cardModes" class="row" role="group" aria-label="복습 모드"><button type="button" class="btn primary" data-mode="all" aria-pressed="true">기본 복습</button><button type="button" class="btn secondary" data-mode="frequent" aria-pressed="false">전 장 3회 이상 오답</button><button type="button" class="btn secondary" data-mode="chapter" aria-pressed="false">장별 오답</button></div><div class="row"><label id="cardChapterLabel" class="hidden" for="cardChapter">장 선택</label><select id="cardChapter" class="hidden" aria-label="장 선택"></select></div><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>날짜별 학습</h3><div id="dailyStudy"></div></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
     </main>
   </div>
@@ -218,7 +218,31 @@ function twoPhraseSpans(text,entries){
   return [{start:0,end:words.length}];
 }
 function level1Span(text,entries){return bestPhraseSpan(text,1,entries)}
-function renderChapters(){const g=$('#chapterGrid');g.innerHTML='';for(let i=1;i<=22;i++){const b=document.createElement('button');b.className='chbtn'+(i===chapter?' active':'');const best=Math.max(0,...state.history.filter(h=>h.chapter===i).map(h=>h.score));if(best>=90)b.classList.add('done');b.textContent=i;b.onclick=()=>{chapter=i;retryWrongOnly=false;retryKey=null;renderAll()};g.appendChild(b)}}
+function renderChapters(){
+ const grid=$('#chapterGrid'),progress=new Map(),perfect=new Map();
+ for(const h of state.history){
+  if(h.scope&&h.scope!=='full')continue;
+  if(![1,2,3].includes(h.level))continue;
+  progress.set(h.chapter,Math.max(progress.get(h.chapter)||0,h.level));
+  if(h.scope==='full'&&h.level===3&&h.score===100)perfect.set(h.chapter,(perfect.get(h.chapter)||0)+1);
+ }
+ grid.innerHTML='';
+ for(let ch=1;ch<=22;ch++){
+  const button=document.createElement('button'),stage=progress.get(ch),master=(perfect.get(ch)||0)>=3;
+  const status=master?'MASTER':stage?stage+'단계 제출':'제출 전';
+  button.type='button';button.className='chbtn'+(ch===chapter?' active':'');
+  if(stage)button.dataset.progress=master?'master':stage;
+  button.textContent=ch;button.title=status;
+  button.setAttribute('aria-label',ch+'장 · '+status);button.setAttribute('aria-pressed',String(ch===chapter));
+  button.onclick=()=>{
+   chapter=ch;retryWrongOnly=false;retryKey=null;retryKeys=null;
+   renderAll();
+   if(!$('#wrongView').classList.contains('hidden'))renderWrong();
+   grid.children[ch-1].focus({preventScroll:true});
+  };
+  grid.appendChild(button);
+ }
+}
 function renderStudy(){$$('.level').forEach(el=>el.classList.toggle('active',+el.dataset.level===level));const chapterEntries=verseEntries(),entries=targetEntries(chapterEntries);$('#currentChapterLabel').textContent=`요한계시록 ${chapter}장`;$('#verseCountLabel').textContent=retryWrongOnly?`오답 다시 풀기 · ${entries.length}절`:`${entries.length}절`;
  if(!chapterEntries.length){$('#studyArea').innerHTML=`<div class="empty"><h3>${chapter}장 본문이 아직 없습니다.</h3><p>왼쪽의 <b>본문 관리</b>에서 개역한글 본문을 등록해 주세요.</p><button class="btn primary" onclick="showView('data')">본문 등록하기</button></div>`;return}
  if(!entries.length){$('#studyArea').innerHTML='<div class="empty">이 단계의 오답을 모두 맞혔어요.</div><button class="btn secondary" onclick="showView(\'wrong\')">오답 노트로</button>';return;}
@@ -275,8 +299,8 @@ function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[],source=
 }
 function updateStreak(now){const d=now.toISOString().slice(0,10);if(!state.lastStudy){state.streak=1}else{const prev=new Date(state.lastStudy);const diff=Math.round((new Date(d)-new Date(prev.toISOString().slice(0,10)))/86400000);if(diff===1)state.streak++;else if(diff>1)state.streak=1}state.lastStudy=now.toISOString()}
 function renderWrong(){
- const sel=$('#wrongChapterFilter'),val=sel.value||'all';sel.innerHTML='<option value="all">전체 장</option>'+Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');sel.value=val;sel.onchange=renderWrongList;
- $('#wrongTabs').innerHTML=[1,2,3,0].map(lv=>`<button class="btn ${wrongLevel===lv?'primary':'ghost'}" aria-pressed="${wrongLevel===lv}" onclick="wrongLevel=${lv};renderWrong()">${lv?lv+'단계':'이전 기록'} <span class="tiny">${activeWrong(lv).length}</span>${importantWrong(lv).length?`<span class="tiny star important-count">중요 ${importantWrong(lv).length}</span>`:''}</button>`).join('');renderWrongList();
+ $('#wrongChapterTitle').textContent=chapter+'장';
+ $('#wrongTabs').innerHTML=[1,2,3,0].map(lv=>`<button class="btn ${wrongLevel===lv?'primary':'ghost'}" aria-pressed="${wrongLevel===lv}" onclick="wrongLevel=${lv};renderWrong()">${lv?lv+'단계':'이전 기록'} <span class="tiny">${activeWrong(lv).filter(w=>w.chapter===chapter).length}</span>${importantWrong(lv).filter(w=>w.chapter===chapter).length?`<span class="tiny star important-count">중요 ${importantWrong(lv).filter(w=>w.chapter===chapter).length}</span>`:''}</button>`).join('');renderWrongList();
 }
 function wrongCard(w){
  const parts=w.parts||[{expected:w.lastExpected||state.verses[w.key]||w.text,mine:w.lastMine??''}];
@@ -284,7 +308,7 @@ function wrongCard(w){
  return `<article class="wrong-item"><div class="row"><b>${w.count>=3?'<span class="star" aria-label="자주 틀리는 구절">★</span> ':''}${w.verse}절</b><span class="badge">${w.count}회 틀림</span></div><div class="answer-detail">${comparison}</div><button class="btn ghost tiny" onclick="retryOne('${w.key}',${w.level})">이 절 다시 풀기</button></article>`;
 }
 function renderWrongList(){
- const val=$('#wrongChapterFilter').value||'all',matches=w=>val==='all'||w.chapter===+val;
+ const matches=w=>w.chapter===chapter;
  const arr=activeWrong(wrongLevel).filter(matches),important=importantWrong(wrongLevel).filter(matches);
  $('#retryWrongBtn').disabled=!arr.length;
  const chapters=[...new Set([...arr,...important].map(w=>w.chapter))].sort((a,b)=>a-b);
@@ -418,13 +442,13 @@ function renderGrowth(){
 }
 function updateProgress(){const m=chapterMastery(chapter);$('#chapterProgress').style.width=m.pct+'%';$('#chapterProgressText').textContent=`통암기 ${m.done}/${m.total}절 · ${m.pct.toFixed(1)}%`}
 function updateHeader(){$('#todayStreak').textContent=`연속 학습 ${state.streak||0}일`;$('#totalAttempts').textContent=`총 ${state.history.length}회 제출`}
-function showView(name){$$('main section').forEach(s=>s.classList.add('hidden'));$('#'+name+'View').classList.remove('hidden');$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderHome();if(name==='wrong')renderWrong();if(name==='stats')renderStats();if(name==='cards')renderCards()}
+function showView(name){$$('main section').forEach(s=>s.classList.add('hidden'));$('#'+name+'View').classList.remove('hidden');$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderHome();if(name==='wrong'){$('.chapter-picker').open=true;renderWrong();}if(name==='stats')renderStats();if(name==='cards')renderCards()}
 window.showView=showView;
 $$('.navbtn').forEach(b=>b.onclick=()=>showView(b.dataset.view));$$('.level').forEach(el=>el.onclick=()=>{level=+el.dataset.level;retryWrongOnly=false;$$('.level').forEach(x=>x.classList.toggle('active',x===el));renderStudy()});
 $('#importBtn').onclick=()=>{const parsed=parseText($('#importText').value);const n=Object.keys(parsed).length;if(!n){alert('인식할 수 있는 구절이 없습니다. 예: 1:1 본문');return}state.verses={...state.verses,...parsed};save();alert(`${n}개 구절을 저장했습니다.`);renderAll();showView('study')};
 $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='revelation-memory-data.json';a.click();URL.revokeObjectURL(a.href)};
 $('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);migrateWrong(o);const retained=state.wrong;Object.assign(state,o);state.wrong={...o.wrong};Object.entries(retained).forEach(([id,w])=>{const imported=state.wrong[id];state.wrong[id]={...(imported||{}),...w,count:Math.max(w.count||0,imported?.count||0),active:w.active!==false||imported?.active===true};});save();renderAll();alert('학습 데이터를 불러왔습니다.')}catch{alert('올바른 JSON 파일이 아닙니다.')}};r.readAsText(f)};
-$('#retryWrongBtn').onclick=()=>{const v=$('#wrongChapterFilter').value,rows=activeWrong(wrongLevel).filter(w=>v==='all'||w.chapter===+v).sort((a,b)=>a.chapter-b.chapter);if(!rows.length)return;chapter=rows[0].chapter;level=wrongLevel||3;retryWrongOnly=true;retryKeys=null;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});};
+$('#retryWrongBtn').onclick=()=>{if(!activeWrong(wrongLevel).some(w=>w.chapter===chapter))return;level=wrongLevel||3;retryWrongOnly=true;retryKeys=null;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});};
 function renderAll(study=true){renderChapters();updateProgress();updateHeader();renderHome();if(study)renderStudy();renderStats()}
 
 function addStudyDays(day,n){return new Date(Date.parse(day)+n*86400000).toISOString().slice(0,10);}
