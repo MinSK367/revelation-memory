@@ -301,7 +301,7 @@ function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[],source=
 function updateStreak(now){const d=now.toISOString().slice(0,10);if(!state.lastStudy){state.streak=1}else{const prev=new Date(state.lastStudy);const diff=Math.round((new Date(d)-new Date(prev.toISOString().slice(0,10)))/86400000);if(diff===1)state.streak++;else if(diff>1)state.streak=1}state.lastStudy=now.toISOString()}
 function renderWrong(){
  $('#wrongChapterTitle').textContent=chapter+'장';
- $('#wrongTabs').innerHTML=[1,2,3,0].map(lv=>`<button class="btn ${wrongLevel===lv?'primary':'ghost'}" aria-pressed="${wrongLevel===lv}" onclick="wrongLevel=${lv};renderWrong()">${lv?lv+'단계':'이전 기록'} <span class="tiny">${activeWrong(lv).filter(w=>w.chapter===chapter).length}</span>${importantWrong(lv).filter(w=>w.chapter===chapter).length?`<span class="tiny star important-count">중요 ${importantWrong(lv).filter(w=>w.chapter===chapter).length}</span>`:''}</button>`).join('');renderWrongList();
+ $('#wrongTabs').innerHTML=[1,2,3].map(lv=>`<button class="btn ${wrongLevel===lv?'primary':'ghost'}" aria-pressed="${wrongLevel===lv}" onclick="wrongLevel=${lv};renderWrong()">${lv?lv+'단계':'이전 기록'} <span class="tiny">${activeWrong(lv).filter(w=>w.chapter===chapter).length}</span>${importantWrong(lv).filter(w=>w.chapter===chapter).length?`<span class="tiny star important-count">중요 ${importantWrong(lv).filter(w=>w.chapter===chapter).length}</span>`:''}</button>`).join('');renderWrongList();
 }
 function wrongCard(w){
  const parts=w.parts||[{expected:w.lastExpected||state.verses[w.key]||w.text,mine:w.lastMine??''}];
