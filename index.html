@@ -425,7 +425,7 @@ function renderDailyStudy(){
  const days=new Map();
  let total=0;
  for(const entry of state.history){
-  if(entry.chapter!==statsChapter||![1,2,3].includes(entry.level))continue;
+  if(entry.scope==='card'||entry.chapter!==statsChapter||![1,2,3].includes(entry.level))continue;
   const date=studyDate(entry.date);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
   if(!days.has(date))days.set(date,[0,0,0]);
