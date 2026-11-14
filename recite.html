@@ -103,6 +103,7 @@ h2{font-size:15px;margin:0}
     <h2>내 기록 <span class="sub">(이 기기에만 저장)</span></h2>
     <div class="chips" id="history"></div>
     <div class="sub" id="historyNote"></div>
+    <button class="link" id="btnForget" hidden></button>
   </section>
 </div>
 
@@ -115,7 +116,7 @@ for (const c in CH) CH[c].sort((a,b)=>a-b);
 const KEY='rvVoiceRecite1';
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{chapters:{},wrong:{}} }catch{ return {chapters:{},wrong:{}} } }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)) }catch{} }
-let store = load(); store.chapters ||= {}; store.wrong ||= {};
+let store = load(); store.chapters ||= {}; store.wrong ||= {}; store.accepted ||= {};
 
 /* ---------- 숫자 → 한글 (받아쓰기가 '7', '144,000'처럼 숫자로 적는 경우) ---------- */
 const D=['','일','이','삼','사','오','육','칠','팔','구'];
@@ -161,7 +162,9 @@ function grade(keys, answer){
     const len=targets[idx].length, last=idx===keys.length-1;
     const m=miss.slice(off,off+len), ex=extra.slice(off, off+len+(last?1:0));
     const missN=m.reduce((s,x)=>s+x,0), extraN=ex.reduce((s,x)=>s+x.length,0);
-    res.push({key:k, miss:m, extra:ex, missN, extraN, ok:missN===0&&extraN===0});
+    let heard=''; for(let i=0;i<len;i++){ heard+=ex[i]; if(!m[i]) heard+=targets[idx][i]; } if(last) heard+=ex[len];
+    const exact=missN===0&&extraN===0, accepted=!exact && (store.accepted[k]||[]).includes(sound(heard));
+    res.push({key:k, miss:m, extra:ex, missN, extraN, heard, exact, accepted, ok:exact||accepted});
     off+=len;
   });
   return res;
@@ -199,21 +202,33 @@ function updatePrompt(){
   $('btnWrongOnly').hidden = true;
 }
 function setMode(m){ mode=m; wrongOnly=null; $('tabVerse').setAttribute('aria-pressed', m==='verse'); $('tabChapter').setAttribute('aria-pressed', m==='chapter'); clearAll(); updatePrompt(); }
-function clearAll(){ base=''; $('answer').value=''; $('interim').textContent=''; $('resultCard').hidden=true; }
+function clearAll(){ stopMic(true); base=''; $('answer').value=''; $('interim').textContent=''; $('resultCard').hidden=true; }
 
 function showResult(res){
+  res.forEach(r=>{ if(r.ok) delete store.wrong[r.key]; else store.wrong[r.key]=(store.wrong[r.key]||0)+1; });
+  renderResult(res);
+  $('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+// 휴대폰이 잘못 받아쓴 것을 사용자가 정답으로 인정: 같은 절에서 똑같이 들리면 다음부터 자동으로 정답
+function acceptHeard(res, key){
+  const r=res.find(x=>x.key===key); if(!r) return;
+  (store.accepted[key] ||= []).includes(sound(r.heard)) || store.accepted[key].push(sound(r.heard));
+  r.accepted=r.ok=true; delete store.wrong[key]; renderResult(res);
+}
+const acceptBtn = r => `<button class="link" data-accept="${r.key}">맞게 말했어요 (휴대폰이 잘못 들음)</button>`;
+function renderResult(res){
   const card=$('resultCard'); card.hidden=false;
   const okN=res.filter(r=>r.ok).length;
-  res.forEach(r=>{ if(r.ok) delete store.wrong[r.key]; else store.wrong[r.key]=(store.wrong[r.key]||0)+1; });
-  const note = `<p class="sub">빨간 글자는 빠뜨렸거나 다르게 말한 부분이에요. 위첨자 취소선은 더 들어간 글자예요. 휴대폰이 잘못 알아들었을 수도 있으니, 확실히 맞게 말했다면 위 글상자에서 고치고 다시 채점하세요.</p>`;
+  const note = `<p class="sub">빨간 글자는 빠뜨렸거나 다르게 들린 부분이에요. 위첨자 취소선은 더 들어간 글자예요. 분명히 맞게 말했는데 휴대폰이 잘못 들은 거라면 <b>맞게 말했어요</b>를 누르세요. 이 절에서 똑같이 들리면 다음부터는 정답으로 쳐요.</p>`;
+  const acc = `<p class="sub">휴대폰이 잘못 들은 것으로 인정한 답이에요.</p>`;
   if(mode==='verse'){
     const r=res[0];
     card.innerHTML = `<div class="verdict"><span class="badge ${r.ok?'ok':'bad'}">${r.ok?'O':'X'}</span>${r.ok?'정확히 외웠어요':'다시 확인할 부분이 있어요'}</div>
       <div class="verse">${renderVerse(r)}</div>
       <div class="counts">빠뜨린 글자 ${r.missN}개 · 더 들어간 글자 ${r.extraN}개</div>
-      ${r.ok?'':note}
+      ${r.accepted?acc:''}${r.ok?'':note+acceptBtn(r)}
       <div class="row"><button class="btn grow" id="btnRetry">다시 말하기</button><button class="btn primary grow" id="btnNext">다음 절</button></div>`;
-    $('btnRetry').onclick=()=>{clearAll(); $('answer').focus();};
+    $('btnRetry').onclick=()=>{ clearAll(); window.scrollTo({top:0,behavior:'smooth'}); };
     $('btnNext').onclick=nextVerse;
   } else {
     const c=+$('selCh').value, full=!wrongOnly;
@@ -222,12 +237,12 @@ function showResult(res){
     card.innerHTML = `<div class="score">${okN} / ${res.length}<span class="sub"> 절 정확</span></div>
       <div class="counts">${wrong.length? `틀린 절: ${wrong.map(r=>r.key.split(':')[1]).join(', ')}절` : '모든 절을 정확히 외웠어요.'}</div>
       ${wrong.length?note:''}
-      <div class="vlist">${res.map(r=>`<div class="vitem ${r.ok?'':'bad'}"><div class="vhead"><span>${r.key.split(':')[1]}절</span><span class="${r.ok?'ok':'bad'}">${r.ok?'O':`X · 빠짐 ${r.missN} · 더함 ${r.extraN}`}</span></div>${r.ok?'':`<div class="verse">${renderVerse(r)}</div>`}</div>`).join('')}</div>
+      <div class="vlist">${res.map(r=>`<div class="vitem ${r.ok?'':'bad'}"><div class="vhead"><span>${r.key.split(':')[1]}절</span><span class="${r.ok?'ok':'bad'}">${r.ok?(r.accepted?'O · 인정':'O'):`X · 빠짐 ${r.missN} · 더함 ${r.extraN}`}</span></div>${r.exact?'':`<div class="verse">${renderVerse(r)}</div>`}${r.ok?'':acceptBtn(r)}</div>`).join('')}</div>
       ${wrong.length?`<button class="btn primary" id="btnRedoWrong">틀린 ${wrong.length}절만 다시 말하기</button>`:''}`;
     if(wrong.length) $('btnRedoWrong').onclick=()=>{ wrongOnly=wrong.map(r=>r.key); clearAll(); updatePrompt(); window.scrollTo({top:0,behavior:'smooth'}); };
   }
+  card.querySelectorAll('[data-accept]').forEach(b=>b.onclick=()=>acceptHeard(res, b.dataset.accept));
   save(); renderHistory();
-  card.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function nextVerse(){
   const c=+$('selCh').value, vs=CH[c], i=vs.indexOf(+$('selV').value);
@@ -240,6 +255,7 @@ function renderHistory(){
   $('history').innerHTML = cs.length ? cs.map(c=>{const h=store.chapters[c]; return `<span class="chip ${h.ok===h.total?'full':''}" title="최고 ${h.best}">${c}장 ${h.ok}/${h.total}</span>`}).join('') : '<span class="sub">아직 장 전체 기록이 없어요. 장 전체로 한 번 말해 보면 여기에 쌓여요.</span>';
   const w=Object.entries(store.wrong).sort((a,b)=>b[1]-a[1]).slice(0,8);
   $('historyNote').textContent = w.length ? '자주 틀린 절: '+w.map(([k,n])=>`${k.replace(':','장 ')}절(${n})`).join(', ') : '';
+  const an=Object.keys(store.accepted).length; $('btnForget').hidden=!an; $('btnForget').textContent=`인정한 답 ${an}절 지우기`;
 }
 
 /* ---------- 음성 입력 ---------- */
@@ -263,18 +279,29 @@ const bigrams = s => { const g=[]; for(let i=0;i<s.length-1;i++) g.push(s[i]+s[i
 function bestAlt(r){ let best=r[0].transcript, top=-1;
   for(let i=0;i<r.length;i++){ const g=bigrams(sound(norm(r[i].transcript))); const sc=g.length? g.filter(x=>grams.has(x)).length/g.length : 0; if(sc>top){top=sc; best=r[i].transcript;} }
   return best.trim(); }
-function micFail(msg){ setMic(false); try{rec.abort()}catch{} $('interim').textContent=msg; }
-function setupWebSpeech(){
-  rec=new SR(); rec.lang='ko-KR'; rec.continuous=true; rec.interimResults=true; rec.maxAlternatives=3;
-  rec.onstart=()=>{ startedAt=Date.now(); if(listening && !$('interim').textContent) $('interim').textContent='듣고 있어요. 말해 보세요.'; };
+function micFail(msg){ setMic(false); killRec(); $('interim').textContent=msg; }
+function killRec(){ const o=rec; rec=null; try{o?.abort()}catch{} }
+let afterStop=null;
+function stopMic(discard){ // discard: 남은 결과도 버린다
+  afterStop=null;
+  if(engine==='claude'){ if(listening) dict.stop().catch(()=>{}); return; }
+  if(listening) setMic(false);
+  if(discard) killRec(); else try{rec?.stop()}catch{}
+}
+function startRec(){
+  killRec();
+  const r=rec=new SR(); r.lang='ko-KR'; r.continuous=true; r.interimResults=true; r.maxAlternatives=3;
+  r.onstart=()=>{ if(r!==rec) return; startedAt=Date.now(); if(listening && $('interim').textContent==='마이크를 켜는 중…') $('interim').textContent='듣고 있어요. 말해 보세요.'; };
   // 아이폰 Safari는 '확정' 표시가 늦거나 같은 결과를 다시 보내서, 매번 이번 구간 전체를 새로 써 넣는다(두 번 들어가지 않게)
-  rec.onresult=e=>{ quickEnds=0; const t=Array.from(e.results).map(bestAlt).join(' '); $('answer').value=(base? base+' ':'')+t; $('interim').textContent='받아쓰는 중…'; };
-  rec.onerror=e=>{ if(MIC_ERR[e.error]) micFail(MIC_ERR[e.error]); }; // no-speech·aborted는 그냥 다시 듣는다
-  rec.onend=()=>{ if(!listening) return;
+  r.onresult=e=>{ if(r!==rec) return; quickEnds=0; const t=Array.from(e.results).map(bestAlt).join(' '); $('answer').value=(base? base+' ':'')+t; if(listening) $('interim').textContent='받아쓰는 중…'; };
+  r.onerror=e=>{ if(r!==rec) return; if(MIC_ERR[e.error]) micFail(MIC_ERR[e.error]); }; // no-speech·aborted는 그냥 다시 듣는다
+  r.onend=()=>{ if(r!==rec) return;
+    if(!listening){ const f=afterStop; afterStop=null; if(f) f(); return; } // 멈춘 뒤 마지막 말까지 받고 나서 채점
     // 켜자마자 꺼지기를 반복하면 멈추고 알려 준다(끝없이 다시 켜지 않게)
     quickEnds = Date.now()-startedAt<1500 ? quickEnds+1 : 0;
     if(quickEnds>=3) return micFail('마이크가 바로 꺼져요. Safari에서 열었는지 확인하고, 안 되면 글상자를 눌러 키보드의 마이크 버튼을 써 주세요.');
-    base=$('answer').value.trim(); try{rec.start()}catch{ micFail('마이크를 다시 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); } }; // 아이폰은 잠깐 멈추면 끊겨서 다시 켠다
+    base=$('answer').value.trim(); try{ startRec(); }catch{ micFail('마이크를 다시 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); } }; // 아이폰은 잠깐 멈추면 끊겨서 다시 켠다
+  r.start();
 }
 // 길게 말하는 동안 화면이 꺼지면 듣기가 끊긴다
 let wake=null;
@@ -286,15 +313,16 @@ $('btnMic').onclick=()=>{
     setMic(true); return;
   }
   if(engine==='web'){
-    if(listening){ setMic(false); try{rec.stop()}catch{} return; }
+    if(listening){ stopMic(false); return; }
+    if(!$('resultCard').hidden) clearAll(); // 채점한 뒤 다시 말하면 이전 답에 이어 붙지 않게 새로 시작
     $('answer').blur(); base=$('answer').value.trim(); quickEnds=0;
     grams=new Set(bigrams(sound(currentKeys().map(k=>norm(VERSES[k])).join(''))));
     setMic(true); $('interim').textContent='마이크를 켜는 중…';
-    try{ rec.start(); }catch{ micFail('마이크를 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); }
+    try{ startRec(); }catch{ micFail('마이크를 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); }
   }
 };
 function initSpeech(){
-  if(SR){ engine='web'; setupWebSpeech(); $('btnMic').hidden=false;
+  if(SR){ engine='web'; $('btnMic').hidden=false;
     $('tip').innerHTML='<b>말하기 시작</b>을 한 번 누르고(누르고 있지 않아도 돼요) 외운 구절을 말하세요. 다 말했으면 한 번 더 눌러 멈추고 <b>채점하기</b>. 절 번호는 말하지 마세요. 마이크 버튼이 안 되면 키보드의 마이크 버튼으로 받아써도 돼요.'; }
   else useKeyboardOnly();
   // claude.ai 안에서 열었을 때(컴퓨터 크롬·데스크톱 앱)는 Claude 받아쓰기를 쓴다
@@ -313,12 +341,19 @@ $('tabChapter').onclick=()=>setMode('chapter');
 $('selCh').onchange=()=>{ fillVerses(); wrongOnly=null; clearAll(); updatePrompt(); };
 $('selV').onchange=()=>{ clearAll(); updatePrompt(); };
 $('btnClear').onclick=()=>{ clearAll(); };
+function doGrade(){ const a=$('answer').value; if(!norm(a)) return; showResult(grade(currentKeys(), a)); }
 $('btnGrade').onclick=()=>{
-  if(listening){ if(engine==='web'){ setMic(false); try{rec.stop()}catch{} } else if(dict) dict.stop().catch(()=>{}); }
-  const a=$('answer').value; if(!norm(a)){ $('answer').focus(); return; }
-  showResult(grade(currentKeys(), a));
+  if(listening && engine==='web'){
+    stopMic(false); $('interim').textContent='마지막 말을 받아쓰는 중…';
+    let done=false;
+    const go=()=>{ if(done) return; done=true; clearTimeout(timer); afterStop=null; $('interim').textContent=''; doGrade(); };
+    const timer=setTimeout(go, 2000); afterStop=go; return; // shortcut: 끝 신호가 안 오면 2초 뒤 채점, 마지막 말이 잘리면 늘린다
+  }
+  if(listening) stopMic(false);
+  doGrade();
 };
+$('btnForget').onclick=()=>{ store.accepted={}; save(); renderHistory(); };
 fillChapters(); fillVerses(); updatePrompt(); initSpeech(); renderHistory();
-window.__rv = {grade, fixDigits, norm, sound, VERSES};
+window.__rv = {grade, fixDigits, norm, sound, VERSES, store};
 </script>
 </body></html>
