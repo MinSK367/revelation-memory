@@ -17,6 +17,9 @@
   --bg:#10151C; --surface:#18202A; --ink:#E6EAF0; --muted:#9AA6B5; --line:#2C3644;
   --accent:#7FA8D6; --accent-ink:#0E1620; --ok:#5CC28B; --ok-soft:#173226; --bad:#F07A70; --bad-soft:#3A1E1C; color-scheme:dark}
 *{box-sizing:border-box}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+textarea,.verse{-webkit-user-select:text;user-select:text}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
 .wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
@@ -83,7 +86,7 @@ h2{font-size:15px;margin:0}
 
   <section class="card" id="promptCard">
     <div class="ref" id="ref">1장 1절</div>
-    <button class="btn mic" id="btnMic" hidden><span class="dot"></span><span id="micLabel">눌러서 말하기</span></button>
+    <button class="btn mic" id="btnMic" hidden><span class="dot"></span><span id="micLabel">한 번 눌러 말하기 시작</span></button>
     <div class="interim" id="interim" aria-live="polite"></div>
     <label for="answer" class="sub">말한 내용 (잘못 알아들은 글자는 직접 고쳐도 돼요)</label>
     <textarea id="answer" placeholder="여기를 누르고 아이폰 키보드 아래쪽 마이크 버튼을 누르면 받아써져요."></textarea>
@@ -136,13 +139,15 @@ function fixDigits(input, target){
 /* ---------- 채점: 공백·문장부호 빼고 글자 단위 비교 ---------- */
 const isChar = ch => /[\p{L}\p{N}]/u.test(ch);
 const norm = s => [...s].filter(isChar).join('');
-function lcsOps(a, b){ // a=정답, b=답안
+const JUNG={1:5,3:7,10:11,15:11};
+const sound = s => [...s].map(ch=>{ const i=ch.charCodeAt(0)-0xAC00; if(i<0||i>11171) return ch; const j=Math.floor(i/28)%21; return j in JUNG ? String.fromCharCode(0xAC00+i+(JUNG[j]-j)*28) : ch; }).join('');
+function lcsOps(a, b, raw=b){ // a=정답, b=답안(비교용), raw=답안(보여주기용)
   const n=a.length, m=b.length, W=m+1, dp=new Uint16Array((n+1)*W);
   for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--)
     dp[i*W+j] = a[i]===b[j] ? dp[(i+1)*W+j+1]+1 : Math.max(dp[(i+1)*W+j], dp[i*W+j+1]);
   const miss=new Uint8Array(n), extra=Array.from({length:n+1},()=>'' ); let i=0,j=0;
-  while(i<n&&j<m){ if(a[i]===b[j]){i++;j++;} else if(dp[(i+1)*W+j]>=dp[i*W+j+1]){miss[i]=1;i++;} else {extra[i]+=b[j];j++;} }
-  while(i<n){miss[i]=1;i++;} while(j<m){extra[n]+=b[j];j++;}
+  while(i<n&&j<m){ if(a[i]===b[j]){i++;j++;} else if(dp[(i+1)*W+j]>=dp[i*W+j+1]){miss[i]=1;i++;} else {extra[i]+=raw[j];j++;} }
+  while(i<n){miss[i]=1;i++;} while(j<m){extra[n]+=raw[j];j++;}
   return {miss, extra};
 }
 // 여러 절을 이어서 채점하고 절별로 나눠 돌려준다
@@ -150,7 +155,7 @@ function grade(keys, answer){
   const targets = keys.map(k=>norm(VERSES[k]));
   const all = targets.join('');
   const ans = norm(fixDigits(answer, all));
-  const {miss, extra} = lcsOps(all, ans);
+  const {miss, extra} = lcsOps(sound(all), sound(ans), ans);
   let off=0; const res=[];
   keys.forEach((k,idx)=>{
     const len=targets[idx].length, last=idx===keys.length-1;
@@ -240,18 +245,36 @@ function renderHistory(){
 /* ---------- 음성 입력 ---------- */
 let listening=false, engine=null, rec=null, dict=null, base='';
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-function setMic(on){ listening=on; keepAwake(on); $('btnMic').classList.toggle('on',on); $('micLabel').textContent = on?'듣는 중 · 눌러서 멈추기':'눌러서 말하기'; if(!on) $('interim').textContent=''; }
+function setMic(on){ listening=on; keepAwake(on); $('btnMic').classList.toggle('on',on); $('micLabel').textContent = on?'듣는 중 · 다 말하면 한 번 눌러 멈추기':'한 번 눌러 말하기 시작'; if(!on) $('interim').textContent=''; }
 function appendFinal(t){ t=t.trim(); if(!t) return; const a=$('answer'); a.value = (a.value.trim()? a.value.trim()+' ':'') + t; }
 function useKeyboardOnly(msg){
   engine=null; $('btnMic').hidden=true;
   $('tip').innerHTML = (msg?msg+'<br>':'') + '글상자를 누르고 키보드 아래쪽 <b>마이크 버튼</b>을 눌러 말하세요. 다 말하면 마이크를 다시 눌러 끄고 <b>채점하기</b>를 누르면 돼요. 절 번호는 말하지 마세요.';
 }
+const MIC_ERR={
+  'not-allowed':'마이크 사용이 꺼져 있어요. 주소창 왼쪽 "가가" → 웹 사이트 설정 → 마이크를 "허용"으로 바꾼 뒤 다시 눌러 주세요.',
+  'service-not-allowed':'아이폰 받아쓰기가 꺼져 있어요. 설정 → 일반 → 키보드 → "받아쓰기 활성화"를 켠 뒤 다시 눌러 주세요.',
+  'audio-capture':'마이크를 찾지 못했어요. 다른 앱이 마이크를 쓰고 있으면 닫고 다시 눌러 주세요.',
+  'network':'인터넷 연결이 끊겨 받아쓰지 못했어요. 연결을 확인하고 다시 눌러 주세요.',
+  'language-not-supported':'이 브라우저는 한국어 받아쓰기를 지원하지 않아요. Safari로 열어 주세요.'};
+let grams=null, startedAt=0, quickEnds=0;
+const bigrams = s => { const g=[]; for(let i=0;i<s.length-1;i++) g.push(s[i]+s[i+1]); return g; };
+// 받아쓰기가 후보를 여러 개 주면, 지금 외우는 구절과 가장 많이 겹치는 후보를 쓴다
+function bestAlt(r){ let best=r[0].transcript, top=-1;
+  for(let i=0;i<r.length;i++){ const g=bigrams(sound(norm(r[i].transcript))); const sc=g.length? g.filter(x=>grams.has(x)).length/g.length : 0; if(sc>top){top=sc; best=r[i].transcript;} }
+  return best.trim(); }
+function micFail(msg){ setMic(false); try{rec.abort()}catch{} $('interim').textContent=msg; }
 function setupWebSpeech(){
-  rec=new SR(); rec.lang='ko-KR'; rec.continuous=true; rec.interimResults=true;
+  rec=new SR(); rec.lang='ko-KR'; rec.continuous=true; rec.interimResults=true; rec.maxAlternatives=3;
+  rec.onstart=()=>{ startedAt=Date.now(); if(listening && !$('interim').textContent) $('interim').textContent='듣고 있어요. 말해 보세요.'; };
   // 아이폰 Safari는 '확정' 표시가 늦거나 같은 결과를 다시 보내서, 매번 이번 구간 전체를 새로 써 넣는다(두 번 들어가지 않게)
-  rec.onresult=e=>{ const t=Array.from(e.results).map(r=>r[0].transcript.trim()).join(' '); $('answer').value=(base? base+' ':'')+t; };
-  rec.onerror=e=>{ if(e.error==='not-allowed'||e.error==='service-not-allowed'){ setMic(false); useKeyboardOnly('이 화면에서는 마이크 버튼을 쓸 수 없어요.'); } };
-  rec.onend=()=>{ if(listening){ base=$('answer').value.trim(); try{rec.start()}catch{ setMic(false);} } }; // 아이폰은 잠깐 멈추면 끊겨서 다시 켠다
+  rec.onresult=e=>{ quickEnds=0; const t=Array.from(e.results).map(bestAlt).join(' '); $('answer').value=(base? base+' ':'')+t; $('interim').textContent='받아쓰는 중…'; };
+  rec.onerror=e=>{ if(MIC_ERR[e.error]) micFail(MIC_ERR[e.error]); }; // no-speech·aborted는 그냥 다시 듣는다
+  rec.onend=()=>{ if(!listening) return;
+    // 켜자마자 꺼지기를 반복하면 멈추고 알려 준다(끝없이 다시 켜지 않게)
+    quickEnds = Date.now()-startedAt<1500 ? quickEnds+1 : 0;
+    if(quickEnds>=3) return micFail('마이크가 바로 꺼져요. Safari에서 열었는지 확인하고, 안 되면 글상자를 눌러 키보드의 마이크 버튼을 써 주세요.');
+    base=$('answer').value.trim(); try{rec.start()}catch{ micFail('마이크를 다시 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); } }; // 아이폰은 잠깐 멈추면 끊겨서 다시 켠다
 }
 // 길게 말하는 동안 화면이 꺼지면 듣기가 끊긴다
 let wake=null;
@@ -264,19 +287,22 @@ $('btnMic').onclick=()=>{
   }
   if(engine==='web'){
     if(listening){ setMic(false); try{rec.stop()}catch{} return; }
-    base=$('answer').value.trim(); setMic(true); try{ rec.start(); }catch{}
+    $('answer').blur(); base=$('answer').value.trim(); quickEnds=0;
+    grams=new Set(bigrams(sound(currentKeys().map(k=>norm(VERSES[k])).join(''))));
+    setMic(true); $('interim').textContent='마이크를 켜는 중…';
+    try{ rec.start(); }catch{ micFail('마이크를 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); }
   }
 };
 function initSpeech(){
   if(SR){ engine='web'; setupWebSpeech(); $('btnMic').hidden=false;
-    $('tip').innerHTML='<b>눌러서 말하기</b>를 누르고 외운 구절을 말하세요. 다 말했으면 한 번 더 눌러 멈추고 <b>채점하기</b>. 절 번호는 말하지 마세요. 마이크 버튼이 안 되면 키보드의 마이크 버튼으로 받아써도 돼요.'; }
+    $('tip').innerHTML='<b>말하기 시작</b>을 한 번 누르고(누르고 있지 않아도 돼요) 외운 구절을 말하세요. 다 말했으면 한 번 더 눌러 멈추고 <b>채점하기</b>. 절 번호는 말하지 마세요. 마이크 버튼이 안 되면 키보드의 마이크 버튼으로 받아써도 돼요.'; }
   else useKeyboardOnly();
   // claude.ai 안에서 열었을 때(컴퓨터 크롬·데스크톱 앱)는 Claude 받아쓰기를 쓴다
   if(window.claude && typeof window.claude.use==='function'){
     window.claude.use('dictation').then(d=>{ if(!d) return; dict=d; engine='claude'; $('btnMic').hidden=false;
       d.onFinal(({text})=>appendFinal(text)); d.onPartial(({text})=>{$('interim').textContent=text;});
       d.onState(({state})=>setMic(state==='listening'));
-      $('tip').innerHTML='<b>눌러서 말하기</b>를 누르고 외운 구절을 말하세요. 다 말했으면 한 번 더 눌러 멈추고 <b>채점하기</b>. 절 번호는 말하지 마세요.';
+      $('tip').innerHTML='<b>말하기 시작</b>을 한 번 누르고(누르고 있지 않아도 돼요) 외운 구절을 말하세요. 다 말했으면 한 번 더 눌러 멈추고 <b>채점하기</b>. 절 번호는 말하지 마세요.';
     }).catch(()=>{});
   }
 }
@@ -293,6 +319,6 @@ $('btnGrade').onclick=()=>{
   showResult(grade(currentKeys(), a));
 };
 fillChapters(); fillVerses(); updatePrompt(); initSpeech(); renderHistory();
-window.__rv = {grade, fixDigits, norm, VERSES};
+window.__rv = {grade, fixDigits, norm, sound, VERSES};
 </script>
 </body></html>
