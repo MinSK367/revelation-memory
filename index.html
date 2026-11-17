@@ -169,8 +169,8 @@ const LIGHT_WORDS=new Set(['그','저','이','또','곧','및','더','다','내'
 function contentStem(word){let w=norm(word);for(const p of PARTICLES){if(w.endsWith(p)&&w.length>p.length+1){w=w.slice(0,-p.length);break}}return w}
 function tokenWeight(word){const stem=contentStem(word);if(!stem||LIGHT_WORDS.has(stem))return .15;let score=Math.min(4,Math.max(1,stem.length));if(/^(예수|그리스도|하나님|성령|어린양|천사|교회|보좌|계시|말씀|증거|생명|사망|심판|나라|권세|영광|구원|믿음|인내|회개|복음|성도|선지자)/.test(stem))score+=1.5;return score}
 function chapterStemFreq(entries){const f={};entries.forEach(([,t])=>t.split(/\s+/).forEach(w=>{const stem=contentStem(w);if(stem&&tokenWeight(w)>.5)f[stem]=(f[stem]||0)+1}));return f}
-function phraseCandidates(text,level,entries){
-  const words=text.split(/\s+/).filter(Boolean),n=words.length,freq=chapterStemFreq(entries);
+function phraseCandidates(text,level,freq){
+  const words=text.split(/\s+/).filter(Boolean),n=words.length;
   if(n<=2)return [{start:0,end:n,score:1}];
   const minLen=2;
   const maxLen=level===1?Math.min(5,Math.max(2,Math.round(n*.28))):Math.min(9,Math.max(3,Math.round(n*.38)));
@@ -192,9 +192,9 @@ function phraseCandidates(text,level,entries){
   }
   return out.sort((a,b)=>b.score-a.score);
 }
-function bestPhraseSpan(text,level,entries){return phraseCandidates(text,level,entries)[0]||{start:0,end:Math.min(2,text.split(/\s+/).length)}}
-function twoPhraseSpans(text,entries){
-  const words=text.split(/\s+/),cands=phraseCandidates(text,2,entries);
+function bestPhraseSpan(text,level,freq){return phraseCandidates(text,level,freq)[0]||{start:0,end:Math.min(2,text.split(/\s+/).length)}}
+function twoPhraseSpans(text,freq){
+  const words=text.split(/\s+/),cands=phraseCandidates(text,2,freq);
   // End offsets are exclusive: leave at least one visible word between blanks.
   const apart=(a,b)=>a.end+1<=b.start||b.end+1<=a.start;
   // Keep existing questions when possible; try a shorter candidate if the best spans the verse.
@@ -203,7 +203,7 @@ function twoPhraseSpans(text,entries){
     if(second)return [first,second].sort((a,b)=>a.start-b.start);
   }
   // Repeated or short verses may have no eligible pair. Prefer meaningful, rare two-word phrases.
-  const freq=chapterStemFreq(entries),fallback=[];
+  const fallback=[];
   for(let start=0;start+2<=words.length;start++){
     const score=words.slice(start,start+2).reduce((sum,w)=>sum+tokenWeight(w)+2/(freq[contentStem(w)]||1),0);
     fallback.push({start,end:start+2,score});
@@ -217,7 +217,7 @@ function twoPhraseSpans(text,entries){
   if(words.length>=3)return [{start:0,end:1},{start:words.length-1,end:words.length}];
   return [{start:0,end:words.length}];
 }
-function level1Span(text,entries){return bestPhraseSpan(text,1,entries)}
+function level1Span(text,freq){return bestPhraseSpan(text,1,freq)}
 function renderChapters(){
  const grid=$('#chapterGrid'),progress=new Map(),perfect=new Map();
  for(const h of state.history){
@@ -252,8 +252,8 @@ function renderStudy(){$$('.level').forEach(el=>el.classList.toggle('active',+el
  if(level===1)renderL1(entries,chapterEntries); else if(level===2)renderL2(entries,chapterEntries); else renderL3(entries);
 }
 function targetEntries(entries){if(!retryWrongOnly)return entries;if(retryKeys)return entries.filter(([k])=>retryKeys.has(k));return entries.filter(([k])=>retryKey?k===retryKey:(hasWrong(k,level)||(level===3&&wrongLevel===0&&hasWrong(k,0))))}
-function renderL1(entries,chapterEntries){let html='<div class="card">빈칸에 들어갈 구절을 기억해서 써 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,chapterEntries),ans=blankAnswer(w.slice(sp.start,sp.end).join(' ')),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-end="${sp.end}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
-function renderL2(entries,chapterEntries){let html='<div class="card">빈칸을 모두 맞혀 보세요. 두 빈칸 사이에는 본문 단어가 한 개 이상 보여요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,chapterEntries);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=blankAnswer(w.slice(sp.start,sp.end).join(' '));row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-end="${sp.end}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
+function renderL1(entries,chapterEntries){const freq=chapterStemFreq(chapterEntries);let html='<div class="card">빈칸에 들어갈 구절을 기억해서 써 보세요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),sp=level1Span(t,freq),ans=blankAnswer(w.slice(sp.start,sp.end).join(' ')),before=w.slice(0,sp.start).join(' '),after=w.slice(sp.end).join(' ');html+=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> ${before} <input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-end="${sp.end}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(150,ans.length*13)}px)" autocomplete="off"> ${after}</div>`});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(1)}}
+function renderL2(entries,chapterEntries){const freq=chapterStemFreq(chapterEntries);let html='<div class="card">빈칸을 모두 맞혀 보세요. 두 빈칸 사이에는 본문 단어가 한 개 이상 보여요.</div><form id="quizForm">';entries.forEach(([k,t])=>{const w=t.split(/\s+/),spans=twoPhraseSpans(t,freq);let cursor=0,row=`<div class="card verse"><span class="verse-no">${k.split(':')[1]}</span> `;spans.forEach(sp=>{row+=w.slice(cursor,sp.start).join(' ');if(cursor<sp.start)row+=' ';const ans=blankAnswer(w.slice(sp.start,sp.end).join(' '));row+=`<input class="blank" aria-label="${k.split(':')[1]}절 빈칸" data-key="${k}" data-start="${sp.start}" data-end="${sp.end}" data-answer="${encodeURIComponent(ans)}" style="width:min(92%,${Math.max(170,ans.length*13)}px)" autocomplete="off"> `;cursor=sp.end});row+=w.slice(cursor).join(' ')+'</div>';html+=row});html+=`<button class="btn primary" type="submit">채점하기</button></form><div id="resultBox"></div>`;$('#studyArea').innerHTML=html;$('#quizForm').onsubmit=e=>{e.preventDefault();gradeBlanks(2)}}
 function gradeBlanks(lv){
  const inputs=$$('.blank[data-answer]');if(!inputs.length||$('#quizForm button[type="submit"]').disabled)return;
  const groups={},cards={};inputs.forEach(inp=>{const k=inp.dataset.key,expected=decodeURIComponent(inp.dataset.answer),ok=isExact(inp.value,expected);cards[k]=inp.closest('.card');(groups[k]??=[]).push({mine:inp.value,expected,ok});inp.classList.remove('bad','good');inp.classList.add(ok?'good':'bad');showGradedInput(inp,expected);});
@@ -297,10 +297,16 @@ function showResult(score,wrongKeys,extra='',correctN=null,totalN=null){const wr
 }
 function recordAttempt(lv,score,wrongKeys,wrongDetails={},correctKeys=[],source=null){
  const now=new Date();state.history.unshift({chapter,level:lv,score,date:now.toISOString(),correctCount:correctKeys.length,totalCount:correctKeys.length+wrongKeys.length,scope:source||(retryWrongOnly?'review':'full')});
- if(source||!retryWrongOnly||!retryKeys)correctKeys.forEach(k=>{const w=state.wrong[lv+':'+k];if(w)w.active=false;if(lv===3&&state.wrong['0:'+k])state.wrong['0:'+k].active=false;});
+ correctKeys.forEach(k=>{const w=state.wrong[lv+':'+k];if(w)w.active=false;if(lv===3&&state.wrong['0:'+k])state.wrong['0:'+k].active=false;});
  [...new Set(wrongKeys)].forEach(k=>{const id=lv+':'+k,w=state.wrong[id]??={key:k,level:lv,count:0,chapter:+k.split(':')[0],verse:+k.split(':')[1]};const d=wrongDetails[k]||{};w.active=true;w.count++;w.last=now.toISOString();w.text=state.verses[k];w.lastMine=d.mine??'';w.lastExpected=d.expected??w.text;w.parts=d.parts||null;w.mode=d.mode;});if(lv===3)updateReviewSchedule(correctKeys,wrongKeys,now);updateStreak(now);save();
 }
-function updateStreak(now){const d=now.toISOString().slice(0,10);if(!state.lastStudy){state.streak=1}else{const prev=new Date(state.lastStudy);const diff=Math.round((new Date(d)-new Date(prev.toISOString().slice(0,10)))/86400000);if(diff===1)state.streak++;else if(diff>1)state.streak=1}state.lastStudy=now.toISOString()}
+function updateStreak(now){
+ const timestamp=now.toISOString();
+ const days=new Set(state.history.map(h=>studyDate(h.date)));
+ let day=studyDate(now),streak=0;
+ while(days.has(day)){streak++;day=addStudyDays(day,-1);}
+ state.streak=streak;state.lastStudy=timestamp;
+}
 function renderWrong(){
  $('#wrongChapterTitle').textContent=chapter+'장';
  $('#wrongTabs').innerHTML=[1,2,3].map(lv=>`<button class="btn ${wrongLevel===lv?'primary':'ghost'}" aria-pressed="${wrongLevel===lv}" onclick="wrongLevel=${lv};renderWrong()">${lv?lv+'단계':'이전 기록'} <span class="tiny">${activeWrong(lv).filter(w=>w.chapter===chapter).length}</span>${importantWrong(lv).filter(w=>w.chapter===chapter).length?`<span class="tiny star important-count">중요 ${importantWrong(lv).filter(w=>w.chapter===chapter).length}</span>`:''}</button>`).join('');renderWrongList();
@@ -333,7 +339,7 @@ function renderHome(){
   $('#homeOverall').textContent=`${pct.toFixed(1)}%`;
   $('#homeOverallBadge').textContent=`전체 ${pct.toFixed(1)}%`;
   $('#homeMasteredCount').textContent=`${mastered} / ${total}절`;
-  $('#homeStreak').textContent=`${state.streak||0}일`;
+  $('#homeStreak').textContent=`${currentStreak()}일`;
   $('#homeStudyDays').textContent=`${days}일`;
   $('#homeAttempts').textContent=`${state.history.length}회`;
   $('#homeChapterBars').innerHTML=Array.from({length:22},(_,i)=>{
@@ -348,17 +354,19 @@ function todayEncouragement(){
  return '<div><b>오늘의 명언</b><blockquote>'+esc(q[0])+'</blockquote><a class="tiny muted" href="'+q[2]+'" target="_blank" rel="noopener noreferrer">'+esc(q[1])+'</a><p><b>오늘의 성구</b></p><p>'+esc(v[0])+'</p><a class="tiny muted" href="https://www.bskorea.or.kr/bible/korbibReadpage.php?version=HAN&book='+v[2]+'&chap='+v[3]+'&sec='+v[4]+'" target="_blank" rel="noopener noreferrer">'+v[1]+' · 개역한글</a></div>';
 }
 let statsChapter=1;
-function studyDate(d){return new Date(d).toLocaleDateString('sv-SE',{timeZone:'Asia/Seoul'});}
+const studyDateFormatter=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'});
+function studyDate(d){
+ const date=new Date(d);
+ return Number.isNaN(date.getTime())?'':studyDateFormatter.format(date);
+}
 function fullRuns(ch,lv=3){return state.history.filter(h=>h.chapter===ch&&h.level===lv&&h.scope==='full').sort((a,b)=>new Date(a.date)-new Date(b.date));}
 function masterWins(ch){return fullRuns(ch).filter(h=>h.score===100).length;}
 let calendarMonth=studyDate(new Date()).slice(0,7),calendarSelected=studyDate(new Date());
 const DEFAULT_PLAN_START='2026-10-31';
 const PLAN_LABELS=['3단계 3회 제출','3단계 100점 1회','마스터 달성'];
 function planStart(){
- const plan=state.studyPlan,today=studyDate(new Date());
- // The first release used today's date automatically; move that default to the agreed deadline.
- const oldDefault=plan&&!plan.source&&(plan.start==='2026-11-05'||plan.start===today);
- if(!/^\d{4}-\d{2}-\d{2}$/.test(plan?.start||'')||oldDefault){state.studyPlan={...plan,start:DEFAULT_PLAN_START,source:'default'};save();}
+ const plan=state.studyPlan;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(plan?.start||'')){state.studyPlan={...plan,start:DEFAULT_PLAN_START,source:'default'};save();}
  return state.studyPlan.start;
 }
 function planDay(date){return Math.round((Date.parse(date)-Date.parse(planStart()))/86400000);}
@@ -400,7 +408,7 @@ function renderPlanChapterPicker(date){
  $('#chapterPlanDate').onchange=e=>{if(e.target.value&&e.target.checkValidity())renderPlanChapterPicker(e.target.value);};
  if(tasks)$('#chapterPlanForm').onsubmit=e=>{e.preventDefault();const selected=$$('#chapterPlanForm input:checked').map(el=>+el.value);if(!selected.length){$('#chapterPlanMessage').textContent='한 장 이상 골라 주세요.';return;}state.studyPlan.chaptersByDate??={};state.studyPlan.chaptersByDate[date]=selected;save();renderPlan();renderPlanChapterPicker(date);renderCalendar();$('#chapterPlanMessage').textContent='저장했어요.';};
 }
-function startPlannedChapter(ch){chapter=ch;level=3;retryWrongOnly=false;retryKey=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});}
+function startPlannedChapter(ch){chapter=ch;statsChapter=ch;level=3;retryWrongOnly=false;retryKey=null;retryKeys=null;showView('study');renderAll();$('#studyView').scrollIntoView({block:'start'});}
 
 function moveCalendar(delta){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=new Date(Date.UTC(y,m-1+delta,1)).toISOString().slice(0,7);calendarSelected=calendarMonth+'-01';renderCalendar();}
 function renderCalendar(){
@@ -474,7 +482,7 @@ function renderDailyStudy(){
 function renderStats(){
  renderPlan();renderCalendar();
  renderDailyStudy();
- $('#chapterScores').innerHTML=Array.from({length:22},(_,i)=>{const c=i+1,r=fullRuns(c),wins=masterWins(c);return '<button class="score-tile" aria-pressed="'+(c===statsChapter)+'" onclick="statsChapter='+c+';renderStats()"><b>'+c+'장</b><span>'+(r.length?Math.max(...r.map(h=>h.score))+'점':'—')+'</span><small>'+(wins>=3?'MASTER':'100점 '+wins+'/3')+'</small></button>'}).join('');
+ $('#chapterScores').innerHTML=Array.from({length:22},(_,i)=>{const c=i+1,r=fullRuns(c),wins=masterWins(c);return '<button class="score-tile" aria-pressed="'+(c===statsChapter)+'" onclick="document.querySelector(\'#chapterGrid\').children['+(c-1)+'].click()"><b>'+c+'장</b><span>'+(r.length?Math.max(...r.map(h=>h.score))+'점':'—')+'</span><small>'+(wins>=3?'MASTER':'100점 '+wins+'/3')+'</small></button>'}).join('');
  $('#growthLevel').onchange=renderGrowth;renderGrowth();
 }
 
@@ -491,9 +499,15 @@ function renderGrowth(){
  $('#strategyBox').innerHTML='<b>다음 학습</b><p>'+(last===100?'다음 날 본문을 보지 않고 다시 써 보세요.':last>=80?'틀린 구절을 먼저 연습하고 장 전체를 다시 써 보세요.':last>=50?'짧은 구절 묶음으로 나눠 1·2단계부터 연습하세요.':'본문을 짧게 나눠 읽고 가린 뒤 써 보세요.')+'</p>';
 }
 function updateProgress(){const m=chapterMastery(chapter);$('#chapterProgress').style.width=m.pct+'%';$('#chapterProgressText').textContent=`통암기 ${m.done}/${m.total}절 · ${m.pct.toFixed(1)}%`}
-function updateHeader(){$('#todayStreak').textContent=`연속 학습 ${state.streak||0}일`;$('#totalAttempts').textContent=`총 ${state.history.length}회 제출`}
+function currentStreak(){
+ return state.lastStudy&&studyDate(state.lastStudy)>=addStudyDays(studyDate(new Date()),-1)?state.streak||0:0;
+}
+function updateHeader(){$('#todayStreak').textContent=`연속 학습 ${currentStreak()}일`;$('#totalAttempts').textContent=`총 ${state.history.length}회 제출`}
 function showView(name){$$('main section').forEach(s=>s.classList.add('hidden'));$('#'+name+'View').classList.remove('hidden');$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='home')renderHome();if(name==='wrong'){$('.chapter-picker').open=true;renderWrong();}if(name==='stats'){$('.chapter-picker').open=true;renderStats();}if(name==='cards')renderCards()}
 window.showView=showView;
+document.addEventListener('keydown',e=>{
+ if(e.key==='Enter'&&!e.isComposing&&e.target.matches('#quizForm input.blank, #cardForm input.blank'))e.preventDefault();
+});
 $$('.navbtn').forEach(b=>b.onclick=()=>showView(b.dataset.view));$$('.level').forEach(el=>el.onclick=()=>{level=+el.dataset.level;retryWrongOnly=false;$$('.level').forEach(x=>x.classList.toggle('active',x===el));renderStudy()});
 $('#importBtn').onclick=()=>{const parsed=parseText($('#importText').value);const n=Object.keys(parsed).length;if(!n){alert('인식할 수 있는 구절이 없습니다. 예: 1:1 본문');return}state.verses={...state.verses,...parsed};save();alert(`${n}개 구절을 저장했습니다.`);renderAll();showView('study')};
 $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='revelation-memory-data.json';a.click();URL.revokeObjectURL(a.href)};
@@ -560,6 +574,18 @@ function ensureCardDay(first,last,wrongKeys,reviewLevel){
  return day;
 }
 let cardTransition=false;
+function renderCardPrompt(k,reviewLevel){
+ if(reviewLevel===3)return '<label for="cardAnswer">이 절을 처음부터 끝까지 써 보세요.</label><textarea id="cardAnswer" rows="4" autocomplete="off" spellcheck="false"></textarea>';
+ const text=state.verses[k],words=text.split(/\s+/),freq=chapterStemFreq(verseEntries(Number(k.split(':')[0])));
+ const spans=reviewLevel===1?[level1Span(text,freq)]:twoPhraseSpans(text,freq);
+ let cursor=0;
+ const blanks=spans.map(({start,end},i)=>{
+  const prefix=esc(words.slice(cursor,start).join(' ')),answer=esc(blankAnswer(words.slice(start,end).join(' ')));
+  cursor=end;
+  return prefix+' <input class="blank" '+(i===0?'id="cardAnswer" ':'')+'aria-label="빈칸 '+(i+1)+'" data-answer="'+answer+'" autocomplete="off"> ';
+ });
+ return '<p class="verse">'+blanks.join('')+esc(words.slice(cursor).join(' '))+'</p>';
+}
 function renderCards(){
  const finalReview=cardMode==='final';
  $('#cardRange').classList.toggle('hidden',!finalReview);
@@ -574,30 +600,41 @@ function renderCards(){
  cardTransition=false;
  if(!k){const hasWrong=wrongKeys.size>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.keys=[];day.done=[];day.attempts=0;day.roundRecorded=false;renderCards();};return;}
  const [ch,v]=k.split(':'),reason=['밀린 복습','중요 성구','오늘 복습','오답 복습','기억 확인','새 구절'][cardPriority(k,day.date)];
- $('#cardArea').innerHTML='<div class="row"><span class="badge">'+day.done.length+' / '+day.keys.length+'절 완료</span><span class="muted">'+(finalReview?'최종 복습':reviewLevel+'단계 복습')+' · '+reason+'</span></div><div class="card flashcard"><h3>요한계시록 '+ch+'장 '+v+'절</h3><form id="cardForm"><label for="cardAnswer">이 절을 처음부터 끝까지 써 보세요.</label><textarea id="cardAnswer" rows="4" autocomplete="off" spellcheck="false"></textarea><button class="btn primary" type="submit">정답 확인</button></form><div id="cardFeedback" aria-live="polite"></div></div>';
- $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k,day,finalReview&&first===last?'chapter':'all');};
+ $('#cardArea').innerHTML='<div class="row"><span class="badge">'+day.done.length+' / '+day.keys.length+'절 완료</span><span class="muted">'+(finalReview?'최종 복습':reviewLevel+'단계 복습')+' · '+reason+'</span></div><div class="card flashcard"><h3>요한계시록 '+ch+'장 '+v+'절</h3><form id="cardForm">'+renderCardPrompt(k,reviewLevel||3)+'<button class="btn primary" type="submit">정답 확인</button></form><div id="cardFeedback" aria-live="polite"></div></div>';
+ $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k,day,reviewLevel||3,first===last);};
 }
-function gradeCard(k,day,mode){
+function gradeCard(k,day,reviewLevel,countRound){
  if(cardTransition||day.date!==studyDate(new Date())){if(!cardTransition)renderCards();return;}
- const input=$('#cardAnswer'),mine=input.value,expected=state.verses[k];if(!mine.trim()){input.focus();return;}
- cardTransition=true;const ok=isExact(mine,expected),oldChapter=chapter;chapter=+k.split(':')[0];
+ const inputs=$$('#cardForm input, #cardForm textarea');
+ if(inputs.every(input=>!input.value.trim())){inputs[0].focus();return;}
+ const parts=inputs.map(input=>{
+  const expected=input.dataset.answer??state.verses[k],mine=input.value;
+  return {expected,mine,ok:isExact(mine,expected)};
+ });
+ const ok=parts.every(part=>part.ok),oldChapter=chapter;
+ cardTransition=true;chapter=+k.split(':')[0];
  day.attempts++;
  if(ok){
-  state.mastery[k]=true;
+  if(reviewLevel===3)state.mastery[k]=true;
   day.done.push(k);
-  if(mode==='chapter'&&!day.roundRecorded&&day.keys.length&&day.keys.every(key=>day.done.includes(key))){
+  if(countRound&&!day.roundRecorded&&day.keys.length&&day.keys.every(key=>day.done.includes(key))){
    (state.chapterCardRounds??=[]).push({chapter,date:new Date().toISOString()});
    day.roundRecorded=true;
   }
  }
- recordAttempt(3,ok?100:0,ok?[]:[k],ok?{}:{[k]:{mine,expected,mode:'verse'}},ok?[k]:[],'card');
- chapter=oldChapter;input.readOnly=true;$('#cardForm button').disabled=true;
+ const details=reviewLevel===3?{...parts[0],mode:'verse'}:{parts,mode:'blank'};
+ recordAttempt(reviewLevel,ok?100:0,ok?[]:[k],ok?{}:{[k]:details},ok?[k]:[],'card');
+ chapter=oldChapter;inputs.forEach(input=>input.readOnly=true);$('#cardForm button').disabled=true;
  if(ok){
  $('#cardFeedback').innerHTML='<p class="exact-ok">정답! 다음 카드로 넘어가요.</p>';
  const form=$('#cardForm');
  setTimeout(()=>{if($('#cardForm')!==form)return;if(!$('#cardsView').classList.contains('hidden')){renderCards();$('#cardAnswer')?.focus();}else cardTransition=false;},700);
  }else{
- const d=diffMarked(expected,mine);$('#cardFeedback').innerHTML='<div class="inline-diff"><b>정답</b><div>'+d.expected+'</div><b>내 답</b><div>'+d.mine+'</div></div><button class="btn secondary" id="cardRetry">가리고 다시 쓰기</button>';
+ const diffs=parts.map(({expected,mine},i)=>{
+  const d=diffMarked(expected,mine);
+  return '<div class="inline-diff">'+(parts.length>1?'<b>빈칸 '+(i+1)+'</b>':'')+'<b>정답</b><div>'+d.expected+'</div><b>내 답</b><div>'+d.mine+'</div></div>';
+ });
+ $('#cardFeedback').innerHTML=diffs.join('')+'<button class="btn secondary" id="cardRetry">가리고 다시 쓰기</button>';
  $('#cardRetry').onclick=()=>{renderCards();$('#cardAnswer').focus();};
  }
  renderAll(false);

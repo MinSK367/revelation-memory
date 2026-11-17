@@ -279,11 +279,16 @@ const bigrams = s => { const g=[]; for(let i=0;i<s.length-1;i++) g.push(s[i]+s[i
 function bestAlt(r){ let best=r[0].transcript, top=-1;
   for(let i=0;i<r.length;i++){ const g=bigrams(sound(norm(r[i].transcript))); const sc=g.length? g.filter(x=>grams.has(x)).length/g.length : 0; if(sc>top){top=sc; best=r[i].transcript;} }
   return best.trim(); }
-function micFail(msg){ setMic(false); killRec(); $('interim').textContent=msg; }
+function micFail(msg){ cancelPendingGrade(); setMic(false); killRec(); $('interim').textContent=msg; }
 function killRec(){ const o=rec; rec=null; try{o?.abort()}catch{} }
-let afterStop=null;
+let afterStop=null, gradeTimer=null;
+function cancelPendingGrade(){
+  clearTimeout(gradeTimer);
+  gradeTimer=null; afterStop=null;
+  $('btnGrade').disabled=false;
+}
 function stopMic(discard){ // discard: 남은 결과도 버린다
-  afterStop=null;
+  cancelPendingGrade();
   if(engine==='claude'){ if(listening) dict.stop().catch(()=>{}); return; }
   if(listening) setMic(false);
   if(discard) killRec(); else try{rec?.stop()}catch{}
@@ -315,7 +320,7 @@ $('btnMic').onclick=()=>{
   if(engine==='web'){
     if(listening){ stopMic(false); return; }
     if(!$('resultCard').hidden) clearAll(); // 채점한 뒤 다시 말하면 이전 답에 이어 붙지 않게 새로 시작
-    $('answer').blur(); base=$('answer').value.trim(); quickEnds=0;
+    cancelPendingGrade(); $('answer').blur(); base=$('answer').value.trim(); quickEnds=0;
     grams=new Set(bigrams(sound(currentKeys().map(k=>norm(VERSES[k])).join(''))));
     setMic(true); $('interim').textContent='마이크를 켜는 중…';
     try{ startRec(); }catch{ micFail('마이크를 켜지 못했어요. 버튼을 한 번 더 눌러 주세요.'); }
@@ -345,9 +350,11 @@ function doGrade(){ const a=$('answer').value; if(!norm(a)) return; showResult(g
 $('btnGrade').onclick=()=>{
   if(listening && engine==='web'){
     stopMic(false); $('interim').textContent='마지막 말을 받아쓰는 중…';
-    let done=false;
-    const go=()=>{ if(done) return; done=true; clearTimeout(timer); afterStop=null; $('interim').textContent=''; doGrade(); };
-    const timer=setTimeout(go, 2000); afterStop=go; return; // shortcut: 끝 신호가 안 오면 2초 뒤 채점, 마지막 말이 잘리면 늘린다
+    const go=()=>{ cancelPendingGrade(); $('interim').textContent=''; doGrade(); };
+    $('btnGrade').disabled=true;
+    afterStop=go;
+    gradeTimer=setTimeout(go, 2000);
+    return;
   }
   if(listening) stopMic(false);
   doGrade();
