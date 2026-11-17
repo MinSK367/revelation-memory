@@ -517,7 +517,6 @@ function cardPriority(k,today){
 }
 function shuffleCards(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 let cardMode='1';
-let startedCardMode=null;
 const cardStart=$('#cardStart'),cardEnd=$('#cardEnd');
 cardStart.innerHTML=cardEnd.innerHTML=Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');
 cardEnd.value='22';
@@ -570,15 +569,7 @@ function renderCards(){
  $('#cardChapterRow').classList.toggle('hidden',finalReview);
  const first=finalReview?+cardStart.value:+cardChapter.value;
  const last=finalReview?+cardEnd.value:first;
- const selection=`${cardMode}-${first}`;
  const wrongKeys=new Set(finalReview?cardWrongKeys(3,1,first,last):cardWrongKeys(reviewLevel,3,first,last));
- if(!finalReview&&startedCardMode!==selection){
-  $('#cardArea').innerHTML=wrongKeys.size
-   ?`<div class="card"><p>${reviewLevel}단계에서 3회 이상 틀린 구절 ${wrongKeys.size}개</p><button type="button" class="btn primary" id="startLevelReview">복습 시작</button></div>`
-   :'<div class="card">선택한 장에서 이 단계로 3회 이상 틀린 구절이 없어요.</div>';
-  if(wrongKeys.size)$('#startLevelReview').onclick=()=>{startedCardMode=selection;renderCards();$('#cardAnswer')?.focus();};
-  return;
- }
  const day=ensureCardDay(first,last,wrongKeys,reviewLevel),k=day.keys.find(k=>!day.done.includes(k));
  cardTransition=false;
  if(!k){const hasWrong=wrongKeys.size>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.keys=[];day.done=[];day.attempts=0;day.roundRecorded=false;renderCards();};return;}
