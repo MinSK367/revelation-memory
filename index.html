@@ -86,7 +86,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:list-item;padding
         <div id="studyArea"></div>
       </section>
       <section id="wrongView" class="hidden"><h2>오답 노트 <span class="muted" id="wrongChapterTitle"></span></h2><p class="muted">다시 맞힌 오답은 목록에서 사라져요. 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p><div class="row wrong-tabs" id="wrongTabs" aria-label="오답 단계"></div><div class="row" style="margin:12px 0"><button class="btn secondary" id="retryWrongBtn">이 단계 오답 풀기</button></div><div id="wrongList"></div></section>
-<section id="cardsView" class="hidden"><h2>랜덤카드</h2><div id="cardModes" class="row" role="group" aria-label="복습 단계"><button type="button" class="btn primary" data-mode="1" aria-pressed="true">1단계 복습</button><button type="button" class="btn secondary" data-mode="2" aria-pressed="false">2단계 복습</button><button type="button" class="btn secondary" data-mode="3" aria-pressed="false">3단계 복습</button><button type="button" class="btn secondary" data-mode="final" aria-pressed="false">최종 복습</button></div><p id="cardChapterStatus" class="muted" aria-live="polite"></p><div id="cardRange" class="row hidden"><label for="cardStart">시작 장</label><select id="cardStart"></select><label for="cardEnd">끝 장</label><select id="cardEnd"></select></div><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="dailyStudyTitle">날짜별 학습</h3><p class="tiny muted" id="dailyStudySummary"></p><div id="dailyStudy"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
+<section id="cardsView" class="hidden"><h2>랜덤카드</h2><div id="cardModes" class="row" role="group" aria-label="복습 단계"><button type="button" class="btn primary" data-mode="1" aria-pressed="true">1단계 복습</button><button type="button" class="btn secondary" data-mode="2" aria-pressed="false">2단계 복습</button><button type="button" class="btn secondary" data-mode="3" aria-pressed="false">3단계 복습</button><button type="button" class="btn secondary" data-mode="final" aria-pressed="false">최종 복습</button></div><div id="cardWrongFilter" class="row" style="margin-top:12px"><label for="cardMinWrong">누적 오답</label><select id="cardMinWrong"><option value="1">1회 이상</option><option value="3">3회 이상</option><option value="5">5회 이상</option></select><span id="cardTargetCount" class="muted" role="status"></span></div><p id="cardChapterStatus" class="muted" aria-live="polite"></p><div id="cardRange" class="row hidden"><label for="cardStart">시작 장</label><select id="cardStart"></select><label for="cardEnd">끝 장</label><select id="cardEnd"></select></div><div id="cardArea"></div></section><section id="statsView" class="hidden"><h2>학습 기록</h2><div id="goalPlan" class="card"></div><div class="card" id="studyCalendar"></div><div class="card"><h3>장별 최고점 · 3단계</h3><div id="chapterScores" class="chapter-scores"></div></div><div class="card"><h3 id="dailyStudyTitle">날짜별 학습</h3><p class="tiny muted" id="dailyStudySummary"></p><div id="dailyStudy"></div></div><div class="card"><h3 id="growthTitle"></h3><select id="growthLevel"><option value="3">3단계</option><option value="2">2단계</option><option value="1">1단계</option></select><div id="growthChart"></div><div id="strategyBox"></div></div></section>      <section id="dataView" class="hidden"><h2>본문과 백업</h2><div class="help">본문은 준비되어 있어요. 바로 암기 훈련을 시작하세요.</div><details class="card"><summary>본문 수정 · 백업</summary><div class="importbox"><b>가장 쉬운 입력 형식</b><div class="tiny muted">예: <code>1:1 본문...</code> / <code>1:2 본문...</code> / <code>2:1 본문...</code> 처럼 한 줄에 한 절. “계 1:1” 형식도 인식합니다.</div><textarea id="importText" placeholder="1:1 요한은 아시아에 있는 일곱 교회에 편지하노니 ...\n1:2 ...\n...\n22:21 ..."></textarea><div class="row"><button class="btn primary" id="importBtn">본문 저장·문제 생성</button><button class="btn ghost" id="exportBtn">학습 데이터 내보내기</button><label class="btn ghost" style="cursor:pointer">JSON 백업 불러오기<input type="file" id="fileInput" accept="application/json" hidden></label></div></div></details><details class="card"><summary>문제와 채점 안내</summary><p>1단계는 빈칸 한 곳, 2단계는 두 곳을 채워요. 두 빈칸을 모두 맞혀야 그 절이 정답이에요.</p><p>3단계는 한 절을 끝까지 써요. 띄어쓰기와 문장부호는 달라도 괜찮지만, 글자는 본문과 같아야 해요.</p><p>★는 같은 단계에서 세 번 이상 틀린 절이에요. 다시 맞히면 일반 오답 목록에서 사라지고, 3회 이상 틀린 구절은 중요 성구에 계속 남아요.</p></details></section>
     </main>
   </div>
 </div>
@@ -558,6 +558,13 @@ function cardPriority(k,today){
 }
 function shuffleCards(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 let cardMode='1';
+const cardMinWrong=$('#cardMinWrong');
+cardMinWrong.onchange=()=>{
+ state.cardMinWrongByLevel??={};
+ state.cardMinWrongByLevel[cardMode]=Number(cardMinWrong.value);
+ save();
+ renderCards();
+};
 const cardStart=$('#cardStart'),cardEnd=$('#cardEnd');
 cardStart.innerHTML=cardEnd.innerHTML=Array.from({length:22},(_,i)=>`<option value="${i+1}">${i+1}장</option>`).join('');
 cardEnd.value='22';
@@ -580,22 +587,37 @@ function cardWrongKeys(reviewLevel,minCount,first=1,last=22){
   return record.level===reviewLevel&&record.count>=minCount&&ch>=first&&ch<=last&&Object.hasOwn(state.verses,record.key);
  }).map(record=>record.key))];
 }
-function ensureCardDay(first,last,wrongKeys,reviewLevel){
+function ensureCardDay(first,last,wrongKeys,reviewLevel,minCount=3){
  const today=studyDate(new Date());
  state.reviewSchedule??={};
  // Only previously missed verses can enter the review queue, including resolved records.
  [...wrongKeys].filter(k=>state.mastery[k]&&!state.reviewSchedule[k]).forEach(k=>state.reviewSchedule[k]={step:0,due:today});
  const fullRange=!reviewLevel&&first===1&&last===22;
  const queues=fullRange?state:(state.cardFocusDays??={});
- const queueKey=reviewLevel?`level-${reviewLevel}-chapter-${first}`:fullRange?'cardDay':first===last?`chapter-${first}`:`range-${first}-${last}`;
+ const queueKey=reviewLevel?`level-${reviewLevel}-chapter-${first}-min-${minCount}`:fullRange?'cardDay':first===last?`chapter-${first}`:`range-${first}-${last}`;
+ // Preserve the existing 3+ round when introducing the threshold filter.
+ if(reviewLevel&&minCount===3&&!queues[queueKey]){
+  const old=queues[`level-${reviewLevel}-chapter-${first}`];
+  if(old?.date===today){
+   queues[queueKey]={...old,keys:[...old.keys],done:[...old.done],initialized:old.keys.length>0};
+   save();
+  }
+ }
  if(queues[queueKey]?.date!==today)queues[queueKey]={date:today,keys:[],done:[],attempts:0};
  const day=queues[queueKey];
- // Reconcile already saved daily cards so the rule applies immediately after an update.
+ // Freeze stage review membership until the next round, including resolved verses.
+ if(reviewLevel&&day.initialized){
+  day.keys=day.keys.filter(k=>Object.hasOwn(state.verses,k));
+  day.done=day.done.filter(k=>day.keys.includes(k));
+  return day;
+ }
+ // Keep the final review's existing selection behavior.
  day.keys=day.keys.filter(k=>wrongKeys.has(k));
  day.done=day.done.filter(k=>day.keys.includes(k));
  const groups=Array.from({length:6},()=>[]);
  [...wrongKeys].filter(k=>!day.keys.includes(k)).forEach(k=>groups[cardPriority(k,today)].push(k));
  day.keys.push(...groups.flatMap(shuffleCards));
+ if(reviewLevel)day.initialized=day.keys.length>0;
  save();
  return day;
 }
@@ -616,15 +638,20 @@ function renderCards(){
  const finalReview=cardMode==='final';
  $('#cardRange').classList.toggle('hidden',!finalReview);
  const reviewLevel=finalReview?null:Number(cardMode);
+ $('#cardWrongFilter').classList.toggle('hidden',finalReview);
+ const savedMin=Number(state.cardMinWrongByLevel?.[cardMode]);
+ const minCount=[1,3,5].includes(savedMin)?savedMin:3;
+ cardMinWrong.value=String(minCount);
  const status=$('#cardChapterStatus');
  status.classList.toggle('hidden',finalReview);
  if(!finalReview){$('.chapter-picker').open=true;status.textContent=`${chapter}장 · 왼쪽 장 선택에서 바꿀 수 있어요.`;}
  const first=finalReview?+cardStart.value:chapter;
  const last=finalReview?+cardEnd.value:first;
- const wrongKeys=new Set(finalReview?cardWrongKeys(3,1,first,last):cardWrongKeys(reviewLevel,3,first,last));
- const day=ensureCardDay(first,last,wrongKeys,reviewLevel),k=day.keys.find(k=>!day.done.includes(k));
+ const wrongKeys=new Set(finalReview?cardWrongKeys(3,1,first,last):cardWrongKeys(reviewLevel,minCount,first,last));
+ const day=ensureCardDay(first,last,wrongKeys,reviewLevel,minCount),k=day.keys.find(k=>!day.done.includes(k));
+ $('#cardTargetCount').textContent='대상 '+day.keys.length+'절';
  cardTransition=false;
- if(!k){const hasWrong=wrongKeys.size>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.keys=[];day.done=[];day.attempts=0;day.roundRecorded=false;renderCards();};return;}
+ if(!k){const hasWrong=finalReview?wrongKeys.size>0:day.keys.length>0;$('#cardArea').innerHTML='<div class="card"><h3>'+ (day.keys.length?'이번 회차 완료!':hasWrong?'예정된 복습을 모두 마쳤어요.':'이 모드에서 복습할 오답이 없어요.')+'</h3><p>'+(hasWrong?day.done.length+'절 완료 · '+day.attempts+'회 도전':'암기 훈련에서 틀린 구절이 생기면 여기서 복습할 수 있어요.')+'</p>'+(hasWrong?'<button class="btn primary" id="repeatCards">계속 풀기</button> ':'')+'<button class="btn secondary" onclick="showView(\'study\')">암기 훈련으로</button></div>';if(hasWrong)$('#repeatCards').onclick=()=>{day.keys=[];day.done=[];day.attempts=0;day.roundRecorded=false;day.initialized=false;renderCards();};return;}
  const [ch,v]=k.split(':'),reason=['밀린 복습','중요 성구','오늘 복습','오답 복습','기억 확인','새 구절'][cardPriority(k,day.date)];
  $('#cardArea').innerHTML='<div class="row"><span class="badge">'+day.done.length+' / '+day.keys.length+'절 완료</span><span class="muted">'+(finalReview?'최종 복습':reviewLevel+'단계 복습')+' · '+reason+'</span></div><div class="card flashcard"><h3>요한계시록 '+ch+'장 '+v+'절</h3><form id="cardForm">'+renderCardPrompt(k,reviewLevel||3)+'<button class="btn primary" type="submit">정답 확인</button></form><div id="cardFeedback" aria-live="polite"></div></div>';
  $('#cardForm').onsubmit=e=>{e.preventDefault();gradeCard(k,day,reviewLevel||3,first===last);};
